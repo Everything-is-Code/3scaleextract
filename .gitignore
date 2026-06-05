@@ -1,0 +1,5 @@
+.env
+.env.local
+bin/
+/export/
+*.test
