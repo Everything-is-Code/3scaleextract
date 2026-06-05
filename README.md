@@ -2,63 +2,94 @@
 
 CLI para exportar la configuración completa de un tenant **Red Hat 3scale API Management** (products, backends, plans, auth, policies y applications).
 
-## Requisitos
+## Inicio rápido
 
-- Go 1.22+
-- **Podman** o Docker (método oficial soportado por Red Hat)
-- Imagen del toolbox: `registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16`
-- Cuenta de [Red Hat Registry Service Account](https://access.redhat.com/terms-based-registry)
-- Personal Access Token de 3scale Admin API
-
-Documentación: [Installing the toolbox container image](https://docs.redhat.com/en/documentation/red_hat_3scale_api_management/2.16/html/operating_red_hat_3scale_api_management/the-threescale-toolbox#installing_the_toolbox_container_image)
-
-## Instalar la imagen del toolbox (Red Hat)
+1. Descarga el binario desde [Releases](https://github.com/Everything-is-Code/3scaleextract/releases) y hazlo ejecutable.
+2. Instala las dependencias de runtime (contenedor + imagen toolbox).
+3. Configura las variables de entorno.
+4. Ejecuta el export.
 
 ```bash
-podman login registry.redhat.io
-podman pull registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16
-podman run registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16 3scale help
-```
+chmod +x threescale-export
 
-## Instalar
-
-```bash
-cd 3scaleextract
-go build -o bin/threescale-export ./cmd/threescale-export
-```
-
-## Variables de entorno
-
-Copia `.env.example` a `.env` (gitignored) o exporta las variables manualmente:
-
-```bash
 export THREESCALE_ADMIN_URL="https://tenant-admin.example.com"
-export THREESCALE_ACCESS_TOKEN="your-token"
-export THREESCALE_OUTPUT_DIR="./export"   # opcional, equivalente a --output
+export THREESCALE_ACCESS_TOKEN="your-personal-access-token"
 
-# Toolbox (opcional — valores por defecto según documentación Red Hat)
-export THREESCALE_TOOLBOX_IMAGE="registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16"
-export THREESCALE_TOOLBOX_RUNTIME="podman"   # o docker
-export THREESCALE_TOOLBOX_TLS_CERT="/path/to/ca.pem"  # TLS interno / self-signed
-```
-
-## Exportar tenant
-
-```bash
-bin/threescale-export \
-  --admin-url "$THREESCALE_ADMIN_URL" \
-  --token "$THREESCALE_ACCESS_TOKEN" \
+./threescale-export \
   --output ./export \
   --include-applications \
   --redact-secrets
 ```
 
-El export de productos YAML usa internamente:
+## Prerrequisitos (ejecutar el binario)
+
+| Requisito | Descripción |
+|-----------|-------------|
+| **Binario** | `threescale-export` para Linux x86_64 ([Releases](https://github.com/Everything-is-Code/3scaleextract/releases)) |
+| **Podman** o **Docker** | Runtime de contenedores (Red Hat recomienda Podman) |
+| **Imagen toolbox 3scale** | `registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16` |
+| **Red Hat Registry** | Cuenta de [Registry Service Account](https://access.redhat.com/terms-based-registry) para descargar la imagen |
+| **Token Admin API** | Personal Access Token del Admin Portal 3scale |
+
+No se requiere Go ni compilar nada para usar el binario.
+
+Documentación Red Hat: [Installing the toolbox container image](https://docs.redhat.com/en/documentation/red_hat_3scale_api_management/2.16/html/operating_red_hat_3scale_api_management/the-threescale-toolbox#installing_the_toolbox_container_image)
+
+## Instalar dependencias
+
+### 1. Imagen del toolbox (Red Hat)
 
 ```bash
-podman run --rm registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16 \
-  3scale product export https://TOKEN@tenant-admin.example.com {system_name}
+podman login registry.redhat.io
+podman pull registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16
+podman run --rm registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16 3scale help
 ```
+
+Si usas Docker, sustituye `podman` por `docker`.
+
+### 2. Verificar runtime
+
+El binario detecta automáticamente Podman o Docker. Para forzar uno:
+
+```bash
+export THREESCALE_TOOLBOX_RUNTIME=podman   # o docker
+```
+
+## Configuración
+
+### Variables obligatorias
+
+```bash
+export THREESCALE_ADMIN_URL="https://tenant-admin.example.com"
+export THREESCALE_ACCESS_TOKEN="your-personal-access-token"
+```
+
+### Variables opcionales
+
+```bash
+export THREESCALE_OUTPUT_DIR="./export"   # equivalente a --output
+
+# Toolbox (valores por defecto según documentación Red Hat)
+export THREESCALE_TOOLBOX_IMAGE="registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16"
+export THREESCALE_TOOLBOX_RUNTIME="podman"
+export THREESCALE_TOOLBOX_TLS_CERT="/path/to/ca.pem"   # solo si el Admin Portal usa TLS self-signed
+```
+
+También puedes pasar credenciales por flags (`--admin-url`, `--token`) en lugar de variables de entorno.
+
+## Ejecutar export
+
+```bash
+./threescale-export \
+  --output ./export \
+  --include-applications \
+  --redact-secrets
+```
+
+El export híbrido combina:
+
+- **Admin API** — backends, applications, accounts, JSON complementario por producto.
+- **Toolbox (contenedor Red Hat)** — YAML del producto (`3scale product export`).
 
 ### Flags
 
@@ -66,7 +97,7 @@ podman run --rm registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16 \
 |------|-------------|
 | `--admin-url` | URL del Admin Portal 3scale |
 | `--token` | Personal Access Token |
-| `--output` | Directorio de salida |
+| `--output` | Directorio de salida (default `./export`) |
 | `--include-applications` | Incluye applications y accounts (paginado) |
 | `--redact-secrets` | Enmascara API keys y secretos OIDC |
 | `--per-page` | Tamaño de página Admin API (máx. 500) |
@@ -75,19 +106,17 @@ podman run --rm registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16 \
 | `--toolbox-image` | Imagen del toolbox (default Red Hat 2.16) |
 | `--toolbox-runtime` | `podman` o `docker` (auto-detecta si vacío) |
 | `--toolbox-tls-cert` | Certificado CA montado en el contenedor toolbox |
-| `--toolbox-binary` | Binario local `3scale` (solo desarrollo; no es el método soportado) |
 
-### TLS self-signed en el toolbox
+### TLS self-signed
 
-Según Red Hat, monta el certificado en el contenedor:
+Si el Admin Portal o el toolbox requieren un CA interno:
 
 ```bash
-bin/threescale-export \
-  --toolbox-tls-cert ./self-signed-cert.pem \
+./threescale-export \
+  --toolbox-tls-cert ./ca.pem \
+  --insecure \
   --output ./export
 ```
-
-Equivale a `podman run --env SSL_CERT_FILE=... -v cert:/tmp/...`.
 
 ## Contenido del export
 
@@ -113,15 +142,39 @@ export/
 
 - No exporta billing, Developer Portal ni analytics
 - Requiere acceso a `registry.redhat.io` y runtime de contenedores
-- `--toolbox-binary` es alternativa local; Red Hat recomienda la imagen oficial
+- El export YAML de productos depende de la imagen oficial del toolbox Red Hat
 
-## Tests
+---
+
+## Construir desde código (desarrolladores)
+
+Esta sección es solo para quien desarrolla o modifica el proyecto. **Los clientes no necesitan Go.**
+
+### Requisitos adicionales
+
+- Go 1.22+
+
+### Compilar
+
+```bash
+git clone https://github.com/Everything-is-Code/3scaleextract.git
+cd 3scaleextract
+go build -o bin/threescale-export ./cmd/threescale-export
+```
+
+### Ejecutar binario local
+
+```bash
+bin/threescale-export --output ./export --include-applications --redact-secrets
+```
+
+### Tests
 
 ```bash
 go test ./...
 go test -tags=integration ./internal/export/...   # tenant real (THREESCALE_*)
 ```
 
-## Desarrollo y demo
+### Datos de prueba (lab)
 
-Para cargar datos de prueba en un tenant de lab (fixtures, OIDC simulado, policies) y validar el export end-to-end, ver **[docs/SEED.md](docs/SEED.md)**.
+Para cargar fixtures en un tenant de lab y validar el export end-to-end, ver **[docs/SEED.md](docs/SEED.md)**.
