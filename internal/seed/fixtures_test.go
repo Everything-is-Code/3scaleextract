@@ -1,6 +1,9 @@
 package seed
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestDefaultFixturesCoverage(t *testing.T) {
 	backends, account, products := DefaultFixtures()
@@ -22,7 +25,7 @@ func TestDefaultFixturesCoverage(t *testing.T) {
 
 func TestDryRunSeeder(t *testing.T) {
 	s := NewSeeder(nil, Options{DryRun: true})
-	result, err := s.Run(t.Context())
+	result, err := s.Run(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

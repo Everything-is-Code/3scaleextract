@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -8,7 +9,7 @@ import (
 )
 
 func TestRunExportMissingAuth(t *testing.T) {
-	err := RunExport(t.Context(), config.ExportConfig{OutDir: t.TempDir()})
+	err := RunExport(context.Background(), config.ExportConfig{OutDir: t.TempDir()})
 	if err == nil {
 		t.Fatal("expected error")
 	}
