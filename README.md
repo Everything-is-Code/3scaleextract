@@ -188,8 +188,10 @@ git tag v0.1.1
 git push origin v0.1.1
 ```
 
-GitHub Actions ejecuta tests, compila `threescale-export` y `threescale-seed` para Linux amd64, y publica los `.tar.gz` con checksums en [Releases](https://github.com/Everything-is-Code/3scaleextract/releases).
+GitHub Actions ejecuta tests, compila `threescale-export`, `threescale-seed` y `threescale-visualize` para Linux amd64, y publica los `.tar.gz` con checksums en [Releases](https://github.com/Everything-is-Code/3scaleextract/releases).
 
 ### Datos de prueba (lab)
 
 Para cargar fixtures en un tenant de lab y validar el export end-to-end, ver **[docs/SEED.md](docs/SEED.md)**.
+
+Para generar un informe Markdown del export, ver **[docs/VISUALIZE.md](docs/VISUALIZE.md)**.
