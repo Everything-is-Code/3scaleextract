@@ -11,9 +11,11 @@ import (
 )
 
 const (
-	DefaultToolboxImage   = "registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16"
-	DefaultToolboxRuntime = "podman"
+	DefaultToolboxImage = "registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16"
 )
+
+// containerRuntimes lists runtimes tried when none is configured (docker first for broader client support).
+var containerRuntimes = []string{"docker", "podman"}
 
 var ErrToolboxFailed = errors.New("3scale toolbox product export failed")
 
@@ -64,12 +66,12 @@ func resolveContainerRuntime(preferred string) (string, error) {
 		}
 		return preferred, nil
 	}
-	for _, candidate := range []string{DefaultToolboxRuntime, "docker"} {
+	for _, candidate := range containerRuntimes {
 		if _, err := exec.LookPath(candidate); err == nil {
 			return candidate, nil
 		}
 	}
-	return "", errors.New("podman or docker is required for the 3scale toolbox container image (see Red Hat docs)")
+	return "", errors.New("docker or podman is required for the 3scale toolbox container image (see Red Hat docs)")
 }
 
 func (t *Toolbox) ExportProduct(ctx context.Context, adminURL, token, systemName string) ([]byte, error) {

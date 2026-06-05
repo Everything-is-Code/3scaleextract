@@ -80,7 +80,7 @@ func BindExportFlags(fs *pflag.FlagSet, cfg *ExportConfig) {
 	fs.IntVar(&cfg.MaxConcurrent, "concurrency", cfg.MaxConcurrent, "max concurrent Admin API requests")
 	fs.BoolVar(&cfg.InsecureTLS, "insecure", cfg.InsecureTLS, "skip TLS certificate verification")
 	fs.StringVar(&cfg.ToolboxImage, "toolbox-image", cfg.ToolboxImage, "3scale toolbox container image (Red Hat official)")
-	fs.StringVar(&cfg.ToolboxRuntime, "toolbox-runtime", cfg.ToolboxRuntime, "container runtime for toolbox (podman or docker)")
+	fs.StringVar(&cfg.ToolboxRuntime, "toolbox-runtime", cfg.ToolboxRuntime, "container runtime for toolbox (docker or podman; auto-detects if empty)")
 	fs.StringVar(&cfg.ToolboxNativeBinary, "toolbox-binary", cfg.ToolboxNativeBinary, "optional local 3scale binary instead of container")
 	fs.StringVar(&cfg.ToolboxCertFile, "toolbox-tls-cert", cfg.ToolboxCertFile, "CA/cert file mounted into toolbox container for TLS")
 	if cfg.ToolboxImage == "" {

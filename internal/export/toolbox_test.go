@@ -1,6 +1,8 @@
 package export
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -13,6 +15,68 @@ func TestBuildRemoteURL(t *testing.T) {
 	want := "https://secret-token@tenant-admin.example.com"
 	if got != want {
 		t.Fatalf("remote URL = %q, want %q", got, want)
+	}
+}
+
+func TestResolveContainerRuntimePreferred(t *testing.T) {
+	dir := t.TempDir()
+	writeFakeRuntime(t, dir, "docker")
+	t.Setenv("PATH", dir)
+
+	runtime, err := resolveContainerRuntime("docker")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runtime != "docker" {
+		t.Fatalf("runtime = %q, want docker", runtime)
+	}
+}
+
+func TestResolveContainerRuntimeAutoDetectDocker(t *testing.T) {
+	dir := t.TempDir()
+	writeFakeRuntime(t, dir, "docker")
+	t.Setenv("PATH", dir)
+
+	runtime, err := resolveContainerRuntime("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runtime != "docker" {
+		t.Fatalf("runtime = %q, want docker", runtime)
+	}
+}
+
+func TestResolveContainerRuntimeAutoDetectPodmanOnly(t *testing.T) {
+	dir := t.TempDir()
+	writeFakeRuntime(t, dir, "podman")
+	t.Setenv("PATH", dir)
+
+	runtime, err := resolveContainerRuntime("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runtime != "podman" {
+		t.Fatalf("runtime = %q, want podman", runtime)
+	}
+}
+
+func TestResolveContainerRuntimeMissing(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+
+	_, err := resolveContainerRuntime("")
+	if err == nil {
+		t.Fatal("expected error when no runtime in PATH")
+	}
+	if !strings.Contains(err.Error(), "docker or podman") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func writeFakeRuntime(t *testing.T, dir, name string) {
+	t.Helper()
+	path := filepath.Join(dir, name)
+	if err := os.WriteFile(path, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
 	}
 }
 

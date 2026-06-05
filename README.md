@@ -26,7 +26,7 @@ export THREESCALE_ACCESS_TOKEN="your-personal-access-token"
 | Requisito | Descripción |
 |-----------|-------------|
 | **Binario** | `threescale-export` para Linux x86_64 ([Releases](https://github.com/Everything-is-Code/3scaleextract/releases)) |
-| **Podman** o **Docker** | Runtime de contenedores (Red Hat recomienda Podman) |
+| **Docker** o **Podman** | Runtime de contenedores (**no** se requiere Podman; basta con Docker) |
 | **Imagen toolbox 3scale** | `registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16` |
 | **Red Hat Registry** | Cuenta de [Registry Service Account](https://access.redhat.com/terms-based-registry) para descargar la imagen |
 | **Token Admin API** | Personal Access Token del Admin Portal 3scale |
@@ -39,20 +39,24 @@ Documentación Red Hat: [Installing the toolbox container image](https://docs.re
 
 ### 1. Imagen del toolbox (Red Hat)
 
+Con **Docker**:
+
 ```bash
-podman login registry.redhat.io
-podman pull registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16
-podman run --rm registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16 3scale help
+docker login registry.redhat.io
+docker pull registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16
+docker run --rm registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16 3scale help
 ```
 
-Si usas Docker, sustituye `podman` por `docker`.
+Con **Podman** (alternativa), sustituye `docker` por `podman`.
 
-### 2. Verificar runtime
+### 2. Runtime de contenedores
 
-El binario detecta automáticamente Podman o Docker. Para forzar uno:
+El binario **auto-detecta** Docker o Podman en el `PATH` (intenta Docker primero). **No hace falta configurar nada** si solo tienes Docker instalado.
+
+Para forzar un runtime concreto:
 
 ```bash
-export THREESCALE_TOOLBOX_RUNTIME=podman   # o docker
+export THREESCALE_TOOLBOX_RUNTIME=docker   # o podman
 ```
 
 ## Configuración
@@ -69,9 +73,9 @@ export THREESCALE_ACCESS_TOKEN="your-personal-access-token"
 ```bash
 export THREESCALE_OUTPUT_DIR="./export"   # equivalente a --output
 
-# Toolbox (valores por defecto según documentación Red Hat)
+# Toolbox (opcional — auto-detecta docker o podman si se omite THREESCALE_TOOLBOX_RUNTIME)
 export THREESCALE_TOOLBOX_IMAGE="registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16"
-export THREESCALE_TOOLBOX_RUNTIME="podman"
+export THREESCALE_TOOLBOX_RUNTIME="docker"   # solo si quieres forzar el runtime
 export THREESCALE_TOOLBOX_TLS_CERT="/path/to/ca.pem"   # solo si el Admin Portal usa TLS self-signed
 ```
 
@@ -104,7 +108,7 @@ El export híbrido combina:
 | `--concurrency` | Peticiones concurrentes (default 4) |
 | `--insecure` | Omitir verificación TLS en Admin API |
 | `--toolbox-image` | Imagen del toolbox (default Red Hat 2.16) |
-| `--toolbox-runtime` | `podman` o `docker` (auto-detecta si vacío) |
+| `--toolbox-runtime` | `docker` o `podman` (auto-detecta si vacío; Docker primero) |
 | `--toolbox-tls-cert` | Certificado CA montado en el contenedor toolbox |
 
 ### TLS self-signed
