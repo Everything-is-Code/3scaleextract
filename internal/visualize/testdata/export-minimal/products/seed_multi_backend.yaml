@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Product
+metadata:
+  name: seed_multi_backend
+spec:
+  systemName: seed_multi_backend
+  name: Seed Multi Backend Product

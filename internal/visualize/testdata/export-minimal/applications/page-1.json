@@ -1,0 +1,22 @@
+[
+  {
+    "application": {
+      "id": 1,
+      "name": "Alpha App",
+      "service_id": 10,
+      "plan_id": 501,
+      "account_id": 42,
+      "state": "live"
+    }
+  },
+  {
+    "application": {
+      "id": 2,
+      "name": "Multi App",
+      "service_id": 20,
+      "plan_id": 601,
+      "account_id": 43,
+      "state": "live"
+    }
+  }
+]

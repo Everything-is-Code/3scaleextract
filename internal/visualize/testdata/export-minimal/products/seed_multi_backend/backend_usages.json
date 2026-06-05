@@ -1,0 +1,25 @@
+{
+  "backend_usages": [
+    {
+      "backend_usage": {
+        "id": 2,
+        "backend_id": 100,
+        "path": "/payments"
+      }
+    },
+    {
+      "backend_usage": {
+        "id": 3,
+        "backend_id": 101,
+        "path": "/billing"
+      }
+    },
+    {
+      "backend_usage": {
+        "id": 4,
+        "backend_id": 101,
+        "path": "/invoices"
+      }
+    }
+  ]
+}

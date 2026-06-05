@@ -1,0 +1,8 @@
+{
+  "proxy": {
+    "service_id": 10,
+    "auth_type": "api_key",
+    "staging_endpoint": "https://staging.example.com/alpha",
+    "endpoint": "https://prod.example.com/alpha"
+  }
+}
