@@ -29,3 +29,6 @@ jobs:
 
       - name: Build seed CLI
         run: go build -o /dev/null ./cmd/threescale-seed
+
+      - name: Build visualize CLI
+        run: go build -o /dev/null ./cmd/threescale-visualize

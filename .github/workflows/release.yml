@@ -34,16 +34,18 @@ jobs:
           mkdir -p dist
           ldflags="-s -w -X github.com/fmeneses/3scaleextract/internal/version.Version=${VERSION}"
 
-          for bin in threescale-export threescale-seed; do
+          for bin in threescale-export threescale-seed threescale-visualize; do
             CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
               go build -ldflags="${ldflags}" -o "dist/${bin}" "./cmd/${bin}"
           done
 
           ( cd dist && tar czf "threescale-export-v${VERSION}-linux-amd64.tar.gz" threescale-export )
           ( cd dist && tar czf "threescale-seed-v${VERSION}-linux-amd64.tar.gz" threescale-seed )
+          ( cd dist && tar czf "threescale-visualize-v${VERSION}-linux-amd64.tar.gz" threescale-visualize )
 
           ( cd dist && sha256sum threescale-export-v"${VERSION}"-linux-amd64.tar.gz > threescale-export-v"${VERSION}"-linux-amd64.tar.gz.sha256 )
           ( cd dist && sha256sum threescale-seed-v"${VERSION}"-linux-amd64.tar.gz > threescale-seed-v"${VERSION}"-linux-amd64.tar.gz.sha256 )
+          ( cd dist && sha256sum threescale-visualize-v"${VERSION}"-linux-amd64.tar.gz > threescale-visualize-v"${VERSION}"-linux-amd64.tar.gz.sha256 )
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -54,6 +56,8 @@ jobs:
             dist/threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
             dist/threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
             dist/threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
+            dist/threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
+            dist/threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
           body: |
             ## Descarga (clientes)
 
@@ -66,6 +70,7 @@ jobs:
             ## Lab / demo (opcional)
 
             - `threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — ver [docs/SEED.md](https://github.com/${{ github.repository }}/blob/main/docs/SEED.md)
+            - `threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — ver [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md)
 
             ## Verificación
 
