@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Product
+metadata:
+  name: seed_alpha
+spec:
+  systemName: seed_alpha
+  name: Seed Alpha Product

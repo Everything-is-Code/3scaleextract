@@ -1,0 +1,8 @@
+{
+  "proxy": {
+    "service_id": 20,
+    "auth_type": "oidc",
+    "staging_endpoint": "https://staging.example.com/multi",
+    "endpoint": "https://prod.example.com/multi"
+  }
+}

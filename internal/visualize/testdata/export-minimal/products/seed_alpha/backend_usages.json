@@ -1,0 +1,11 @@
+{
+  "backend_usages": [
+    {
+      "backend_usage": {
+        "id": 1,
+        "backend_id": 100,
+        "path": "/payments"
+      }
+    }
+  ]
+}
