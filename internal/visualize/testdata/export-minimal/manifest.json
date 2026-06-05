@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "exported_at": "2026-06-05T12:00:00Z",
+  "admin_url": "https://tenant-admin.example.com",
+  "product_count": 2,
+  "backend_count": 2,
+  "application_count": 2,
+  "include_applications": true,
+  "incomplete": false
+}

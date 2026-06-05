@@ -1,0 +1,18 @@
+{
+  "policies": [
+    {
+      "policy": {
+        "name": "edge_limit",
+        "version": "builtin",
+        "configuration": {}
+      }
+    },
+    {
+      "policy": {
+        "name": "url_rewriting",
+        "version": "builtin",
+        "configuration": {}
+      }
+    }
+  ]
+}

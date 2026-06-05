@@ -1,0 +1,12 @@
+{
+  "plans": [
+    {
+      "application_plan": {
+        "id": 601,
+        "name": "Default",
+        "system_name": "default",
+        "state": "published"
+      }
+    }
+  ]
+}

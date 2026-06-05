@@ -1,0 +1,6 @@
+{
+  "id": 100,
+  "system_name": "shared_payments",
+  "name": "Shared Payments",
+  "private_endpoint": "http://payments.internal"
+}
