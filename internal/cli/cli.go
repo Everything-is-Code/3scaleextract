@@ -11,10 +11,9 @@ import (
 	"github.com/fmeneses/3scaleextract/internal/admin"
 	"github.com/fmeneses/3scaleextract/internal/config"
 	"github.com/fmeneses/3scaleextract/internal/export"
+	"github.com/fmeneses/3scaleextract/internal/version"
 	"github.com/spf13/cobra"
 )
-
-const version = "0.1.0"
 
 func NewRoot() *cobra.Command {
 	cfg, _ := config.LoadExportFromEnv()
@@ -28,7 +27,7 @@ application plans, auth configuration, policy chains, and optionally application
 		},
 	}
 	config.BindExportFlags(cmd.Flags(), &cfg)
-	cmd.Version = version
+	cmd.Version = version.Version
 	return cmd
 }
 

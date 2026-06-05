@@ -12,10 +12,9 @@ import (
 	"github.com/fmeneses/3scaleextract/internal/admin"
 	"github.com/fmeneses/3scaleextract/internal/config"
 	"github.com/fmeneses/3scaleextract/internal/seed"
+	"github.com/fmeneses/3scaleextract/internal/version"
 	"github.com/spf13/cobra"
 )
-
-const version = "0.1.0"
 
 func main() {
 	os.Exit(run())
@@ -45,7 +44,7 @@ See docs/SEED.md for fixtures, OIDC setup, and the demo seed-and-export script.`
 	cmd.Flags().BoolVar(&skipExisting, "skip-existing", true, "skip resources that already exist (by system_name)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "validate fixture plan without calling Admin API")
 	cmd.Flags().BoolVar(&listFixtures, "list-fixtures", false, "show fixture coverage matrix and exit")
-	cmd.Version = version
+	cmd.Version = version.Version
 
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())

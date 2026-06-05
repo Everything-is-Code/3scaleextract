@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test
+        run: go test ./...
+
+      - name: Resolve version
+        id: version
+        run: echo "tag=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and package
+        env:
+          VERSION: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          ldflags="-s -w -X github.com/fmeneses/3scaleextract/internal/version.Version=${VERSION}"
+
+          for bin in threescale-export threescale-seed; do
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+              go build -ldflags="${ldflags}" -o "dist/${bin}" "./cmd/${bin}"
+          done
+
+          ( cd dist && tar czf "threescale-export-v${VERSION}-linux-amd64.tar.gz" threescale-export )
+          ( cd dist && tar czf "threescale-seed-v${VERSION}-linux-amd64.tar.gz" threescale-seed )
+
+          ( cd dist && sha256sum threescale-export-v"${VERSION}"-linux-amd64.tar.gz > threescale-export-v"${VERSION}"-linux-amd64.tar.gz.sha256 )
+          ( cd dist && sha256sum threescale-seed-v"${VERSION}"-linux-amd64.tar.gz > threescale-seed-v"${VERSION}"-linux-amd64.tar.gz.sha256 )
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
+            dist/threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
+            dist/threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
+            dist/threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
+          body: |
+            ## Descarga (clientes)
+
+            1. `threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz`
+            2. `tar xzf threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz`
+            3. `chmod +x threescale-export`
+
+            Ver [README](https://github.com/${{ github.repository }}#inicio-rápido) para dependencias (Docker + imagen toolbox) y variables de entorno.
+
+            ## Lab / demo (opcional)
+
+            - `threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — ver [docs/SEED.md](https://github.com/${{ github.repository }}/blob/main/docs/SEED.md)
+
+            ## Verificación
+
+            ```bash
+            sha256sum -c threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
+            ```

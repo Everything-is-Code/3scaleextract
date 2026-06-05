@@ -179,6 +179,17 @@ go test ./...
 go test -tags=integration ./internal/export/...   # tenant real (THREESCALE_*)
 ```
 
+### Release (CI)
+
+Los releases se publican automáticamente al pushear un tag semver:
+
+```bash
+git tag v0.1.1
+git push origin v0.1.1
+```
+
+GitHub Actions ejecuta tests, compila `threescale-export` y `threescale-seed` para Linux amd64, y publica los `.tar.gz` con checksums en [Releases](https://github.com/Everything-is-Code/3scaleextract/releases).
+
 ### Datos de prueba (lab)
 
 Para cargar fixtures en un tenant de lab y validar el export end-to-end, ver **[docs/SEED.md](docs/SEED.md)**.
