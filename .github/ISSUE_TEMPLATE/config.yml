@@ -1,0 +1,12 @@
+---
+blank_issues_enabled: false
+contact_links:
+  - name: RHCL program docs (rhcl-ai)
+    url: https://github.com/Everything-is-Code/rhcl-ai
+    about: Architecture, export schema, Cursor setup, agent guidelines
+  - name: GateForge migration platform
+    url: https://github.com/Everything-is-Code/gateforge/issues
+    about: Issues about analyze/apply, Kuadrant, Angular UI
+  - name: 3scaleextract CLI
+    url: https://github.com/Everything-is-Code/3scaleextract/issues
+    about: Issues about export, seed, visualize
