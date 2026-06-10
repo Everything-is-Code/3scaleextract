@@ -1,17 +1,17 @@
 name: Bug report
-description: Reportar un bug en el ecosistema RHCL
+description: Report a bug in the RHCL ecosystem
 title: "[BUG] "
 labels: ["area/bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Gracias por reportar. Ver [rhcl-ai](https://github.com/Everything-is-Code/rhcl-ai) para contexto del programa.
+        Thanks for reporting. See [rhcl-ai](https://github.com/Everything-is-Code/rhcl-ai) for program context. Write in English.
 
   - type: dropdown
     id: repo
     attributes:
-      label: Repo afectado
+      label: Affected repo
       options:
         - 3scaleextract
         - gateforge
@@ -22,15 +22,15 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Descripción
-      description: Qué pasó y qué esperabas
+      label: Description
+      description: What happened and what you expected
     validations:
       required: true
 
   - type: textarea
     id: reproduce
     attributes:
-      label: Pasos para reproducir
+      label: Steps to reproduce
       placeholder: |
         1. ...
         2. ...
@@ -38,5 +38,5 @@ body:
   - type: textarea
     id: environment
     attributes:
-      label: Entorno
-      placeholder: OS, versión Go/Java, tenant 3scale, etc.
+      label: Environment
+      placeholder: OS, Go/Java version, 3scale tenant, etc.

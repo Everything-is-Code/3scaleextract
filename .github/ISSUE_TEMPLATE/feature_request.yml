@@ -1,36 +1,36 @@
 name: Feature request
-description: Proponer una funcionalidad
+description: Propose a feature
 title: "[FEAT] "
 labels: ["area/feature"]
 body:
   - type: textarea
     id: problem
     attributes:
-      label: Problema / necesidad
+      label: Problem / need
     validations:
       required: true
 
   - type: textarea
     id: solution
     attributes:
-      label: Solución propuesta
+      label: Proposed solution
     validations:
       required: true
 
   - type: dropdown
     id: milestone
     attributes:
-      label: Milestone sugerido
+      label: Suggested milestone
       options:
-        - M1 — Test foundation
-        - M2 — Integration offline
-        - M3 — E2E lab
+        - M1 - Test foundation
+        - M2 - Integration offline
+        - M3 - E2E lab
         - Backlog
 
   - type: checkboxes
     id: repos
     attributes:
-      label: Repos impactados
+      label: Impacted repos
       options:
         - label: 3scaleextract
         - label: gateforge
