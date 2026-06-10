@@ -1,0 +1,40 @@
+name: Test task
+description: Tarea de tests o CI
+title: "[TEST] "
+labels: ["area/tests"]
+body:
+  - type: textarea
+    id: scope
+    attributes:
+      label: Alcance del test
+      description: Qué paquete/clase/componente cubrir
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      placeholder: |
+        - [ ] Tests unitarios pasan en CI
+        - [ ] Cobertura mínima documentada
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad PO
+      options:
+        - priority/p0
+        - priority/p1
+        - priority/p2
+        - priority/p3
+    validations:
+      required: true
+
+  - type: input
+    id: issue_ref
+    attributes:
+      label: Referencia plan (ej. GF-1, EXT-1)
+      placeholder: GF-1

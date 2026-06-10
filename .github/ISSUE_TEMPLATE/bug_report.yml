@@ -1,0 +1,42 @@
+name: Bug report
+description: Reportar un bug en el ecosistema RHCL
+title: "[BUG] "
+labels: ["area/bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar. Ver [rhcl-ai](https://github.com/Everything-is-Code/rhcl-ai) para contexto del programa.
+
+  - type: dropdown
+    id: repo
+    attributes:
+      label: Repo afectado
+      options:
+        - 3scaleextract
+        - gateforge
+        - rhcl-ai
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción
+      description: Qué pasó y qué esperabas
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. ...
+        2. ...
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Entorno
+      placeholder: OS, versión Go/Java, tenant 3scale, etc.
