@@ -1,10 +1,10 @@
 ## Proposed change
 
-<!-- Qué cambia y por qué. Comunicá el objetivo al reviewer/PO. -->
+<!-- What changes and why. Reference issue: EXT-*, GF-*, INT-* -->
 
 ## Type of change
 
-<!-- Marcá **una** categoría principal -->
+<!-- Check **one** primary category -->
 
 - [ ] Bugfix (non-breaking)
 - [ ] New feature
@@ -15,22 +15,23 @@
 
 ## Breaking change
 
-<!-- Solo si aplica: qué rompe, cómo migrar, por qué lo hicimos. Si no aplica, borrá esta sección. -->
+<!-- Only if applicable: what breaks, how to migrate, why. Delete if N/A. -->
 
-## Checklist RHCL
+## RHCL checklist
 
-- [ ] Tests agregados o actualizados (`go test ./...` o `mvn test` / `npm test`)
-- [ ] CI no introduce `-DskipTests` sin justificación
-- [ ] Sin secretos en el diff (tokens, kubeconfigs, OIDC secrets)
-- [ ] Docs [rhcl-ai](https://github.com/Everything-is-Code/rhcl-ai) actualizados si cambia contrato export/import
-- [ ] Probado en lab local si aplica (seed → export → analyze)
+- [ ] Tests added or updated (`go test ./...` or `mvn test` / `npm test`)
+- [ ] CI does not introduce `-DskipTests` without justification
+- [ ] No secrets in diff (tokens, kubeconfigs, OIDC secrets)
+- [ ] rhcl-ai docs updated if export/import contract changes
+- [ ] PR description and docs in **English**
+- [ ] Tested in local lab if applicable (seed → export → analyze)
 
 ## Test plan
 
-<!-- Pasos concretos para validar manualmente -->
+<!-- Concrete manual validation steps -->
 
 ## Additional information
 
-- Fixes / Closes: <!-- EXT-*, GF-*, INT-* o #número -->
+- Fixes / Closes: <!-- EXT-*, GF-*, INT-* or #number -->
 - Related: <!-- cross-repo links -->
 - Milestone: <!-- M1 / M2 / M3 -->
