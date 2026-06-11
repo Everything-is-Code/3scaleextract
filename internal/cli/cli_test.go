@@ -27,3 +27,20 @@ func TestNewRootIsExportCommand(t *testing.T) {
 		t.Fatal("expected root to run export")
 	}
 }
+
+func TestExportHelp(t *testing.T) {
+	cmd := NewRoot()
+	cmd.SetArgs([]string{"--help"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecuteMissingAuth(t *testing.T) {
+	t.Setenv("THREESCALE_ADMIN_URL", "")
+	t.Setenv("THREESCALE_ACCESS_TOKEN", "")
+	t.Setenv("THREESCALE_OUTPUT_DIR", "")
+	if got := Execute(); got != 1 {
+		t.Fatalf("Execute() = %d, want 1", got)
+	}
+}
