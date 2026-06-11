@@ -11,14 +11,24 @@ import (
 const SchemaVersion = "1.0"
 
 type Manifest struct {
-	SchemaVersion       string `json:"schema_version"`
-	ExportedAt          string `json:"exported_at"`
-	AdminURL            string `json:"admin_url"`
-	ProductCount        int    `json:"product_count"`
-	BackendCount        int    `json:"backend_count"`
-	ApplicationCount    int    `json:"application_count,omitempty"`
-	IncludeApplications bool   `json:"include_applications"`
-	Incomplete          bool   `json:"incomplete"`
+	SchemaVersion       string   `json:"schema_version"`
+	ExportedAt          string   `json:"exported_at"`
+	AdminURL            string   `json:"admin_url"`
+	ProductCount        int      `json:"product_count"`
+	BackendCount        int      `json:"backend_count"`
+	ApplicationCount    int      `json:"application_count,omitempty"`
+	IncludeApplications bool     `json:"include_applications"`
+	Incomplete          bool     `json:"incomplete"`
+	Warnings            []string `json:"warnings,omitempty"`
+}
+
+// RecordSkip appends a warning when an optional export resource could not be fetched.
+func (m *Manifest) RecordSkip(product, file, apiPath string, err error) {
+	if m == nil || err == nil {
+		return
+	}
+	m.Warnings = append(m.Warnings, fmt.Sprintf("product %s: skipped %s (%s: %v)", product, file, apiPath, err))
+	m.Incomplete = true
 }
 
 type Writer struct {

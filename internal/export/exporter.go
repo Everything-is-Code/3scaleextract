@@ -101,7 +101,7 @@ func (s *Service) Export(ctx context.Context, opts Options) (*output.Manifest, e
 	}
 
 	for _, svc := range services {
-		if err := s.exportService(ctx, writer, opts, svc); err != nil {
+		if err := s.exportService(ctx, writer, opts, svc, manifest); err != nil {
 			manifest.Incomplete = true
 			return manifest, fmt.Errorf("export service %q: %w", svc.SystemName, err)
 		}
@@ -179,7 +179,7 @@ func (s *Service) exportPolicyCatalog(ctx context.Context, writer *output.Writer
 	return writer.WriteJSON("policies/catalog.json", catalog)
 }
 
-func (s *Service) exportService(ctx context.Context, writer *output.Writer, opts Options, svc serviceRef) error {
+func (s *Service) exportService(ctx context.Context, writer *output.Writer, opts Options, svc serviceRef, manifest *output.Manifest) error {
 	yamlData, err := s.toolbox.ExportProduct(ctx, opts.AdminURL, opts.Token, svc.SystemName)
 	if err != nil {
 		return err
@@ -203,6 +203,7 @@ func (s *Service) exportService(ctx context.Context, writer *output.Writer, opts
 	for _, f := range fetches {
 		var payload json.RawMessage
 		if err := s.client.Get(ctx, f.path, &payload); err != nil {
+			manifest.RecordSkip(svc.SystemName, f.file, f.path, err)
 			continue
 		}
 		rel := filepath.Join("products", svc.SystemName, f.file)
