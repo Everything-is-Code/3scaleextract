@@ -146,3 +146,14 @@ func TestWriterRoot(t *testing.T) {
 		t.Fatalf("Root = %q", w.Root())
 	}
 }
+
+func TestManifestRecordSkip(t *testing.T) {
+	m := &Manifest{}
+	m.RecordSkip("payments", "oidc_configuration.json", "/services/10/proxy/oidc_configuration", os.ErrNotExist)
+	if !m.Incomplete {
+		t.Fatal("expected incomplete")
+	}
+	if len(m.Warnings) != 1 || !strings.Contains(m.Warnings[0], "payments") {
+		t.Fatalf("Warnings = %#v", m.Warnings)
+	}
+}
