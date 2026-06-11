@@ -195,19 +195,6 @@ func mockProductHappyPath(m *seedMockClient, serviceID, planID int) {
 	}
 }
 
-func mockFailPost(m *seedMockClient, path string, err error) {
-	prev := m.defaultPost
-	m.defaultPost = func(p string, form url.Values, dst any) error {
-		if p == path {
-			return err
-		}
-		if prev != nil {
-			return prev(p, form, dst)
-		}
-		return nil
-	}
-}
-
 func minimalAPIKeyProduct() ProductFixture {
 	return ProductFixture{
 		SystemName:  "test_api_key",
