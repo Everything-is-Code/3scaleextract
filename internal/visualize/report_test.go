@@ -140,6 +140,19 @@ func TestWriteReportIncompleteBanner(t *testing.T) {
 	}
 }
 
+func TestWriteReportValidation(t *testing.T) {
+	if err := WriteReport(nil, t.TempDir()); err == nil {
+		t.Fatal("expected error for nil tenant")
+	}
+	tenant, err := LoadExport(filepath.Join("testdata", "export-minimal"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := WriteReport(tenant, ""); err == nil {
+		t.Fatal("expected error for empty output dir")
+	}
+}
+
 func TestWriteReportApplicationsJoin(t *testing.T) {
 	tenant, err := LoadExport(filepath.Join("testdata", "export-minimal"))
 	if err != nil {

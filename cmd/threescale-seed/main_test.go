@@ -44,3 +44,27 @@ func TestListFixtures(t *testing.T) {
 		t.Fatalf("stdout missing seed_api_key:\n%s", out)
 	}
 }
+
+func TestExecuteDryRun(t *testing.T) {
+	t.Setenv("THREESCALE_ADMIN_URL", "https://tenant.example.com")
+	t.Setenv("THREESCALE_ACCESS_TOKEN", "secret")
+	out := captureStdout(func() {
+		if got := executeSeed([]string{"--dry-run"}); got != 0 {
+			t.Fatalf("executeSeed(--dry-run) = %d, want 0", got)
+		}
+	})
+	if !strings.Contains(out, "seed_api_key") {
+		t.Fatalf("stdout missing fixtures:\n%s", out)
+	}
+	if !strings.Contains(out, "dry-run") {
+		t.Fatalf("stdout missing dry-run note:\n%s", out)
+	}
+}
+
+func TestExecuteMissingAuth(t *testing.T) {
+	t.Setenv("THREESCALE_ADMIN_URL", "")
+	t.Setenv("THREESCALE_ACCESS_TOKEN", "")
+	if got := executeSeed(nil); got != 1 {
+		t.Fatalf("executeSeed() = %d, want 1", got)
+	}
+}

@@ -200,3 +200,33 @@ func TestExportRedactSecrets(t *testing.T) {
 		t.Fatalf("yaml still has secret: %s", yamlData)
 	}
 }
+
+func TestExportIncompleteOnBackendFailure(t *testing.T) {
+	dir := t.TempDir()
+	client := &mockClient{
+		responses: map[string]any{
+			"/services": serviceListResponse{},
+		},
+	}
+	svc := NewService(client, &mockToolbox{outputs: map[string][]byte{}})
+	manifest, err := svc.Export(context.Background(), Options{
+		AdminURL: "https://tenant.example.com",
+		Token:    "tok",
+		OutDir:   dir,
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if manifest == nil || !manifest.Incomplete {
+		t.Fatal("expected incomplete manifest")
+	}
+}
+
+func TestAppendYAMLNewline(t *testing.T) {
+	if got := string(appendYAMLNewline([]byte("x"))); got != "x\n" {
+		t.Fatalf("got %q", got)
+	}
+	if got := string(appendYAMLNewline([]byte("x\n"))); got != "x\n" {
+		t.Fatalf("got %q", got)
+	}
+}
