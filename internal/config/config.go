@@ -25,6 +25,7 @@ type ExportConfig struct {
 	OutDir              string
 	IncludeApplications bool
 	RedactSecrets       bool
+	Strict              bool
 	PerPage             int
 	MaxConcurrent       int
 	ToolboxImage        string
@@ -62,6 +63,7 @@ func BindExportFlags(fs *pflag.FlagSet, cfg *ExportConfig) {
 	fs.StringVar(&cfg.OutDir, "output", cfg.OutDir, "export output directory")
 	fs.BoolVar(&cfg.IncludeApplications, "include-applications", cfg.IncludeApplications, "export applications and linked accounts")
 	fs.BoolVar(&cfg.RedactSecrets, "redact-secrets", cfg.RedactSecrets, "mask API keys and OIDC secrets in output")
+	fs.BoolVar(&cfg.Strict, "strict", cfg.Strict, "fail export if any product sidecar JSON cannot be fetched")
 	fs.IntVar(&cfg.PerPage, "per-page", cfg.PerPage, "Admin API page size (max 500)")
 	fs.IntVar(&cfg.MaxConcurrent, "concurrency", cfg.MaxConcurrent, "max concurrent Admin API requests")
 	fs.StringVar(&cfg.ToolboxImage, "toolbox-image", cfg.ToolboxImage, "3scale toolbox container image (Red Hat official)")

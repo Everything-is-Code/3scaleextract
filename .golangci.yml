@@ -10,6 +10,7 @@ linters:
     - gosimple
     - govet
     - ineffassign
+    - revive
     - staticcheck
     - unused
 
@@ -18,6 +19,32 @@ linters-settings:
     errorf: true
     asserts: true
     comparison: true
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+        disabled: true
+      - name: increment-decrement
+      - name: var-naming
+      - name: package-comments
+        disabled: true
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+        disabled: true
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unreachable-code
+      - name: redefines-builtin-id
 
 issues:
   exclude-dirs:
