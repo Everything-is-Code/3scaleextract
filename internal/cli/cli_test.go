@@ -81,8 +81,10 @@ func TestRunExportHappyPath(t *testing.T) {
 
 	dir := t.TempDir()
 	err := RunExport(context.Background(), config.ExportConfig{
-		AdminURL:            srv.URL,
-		Token:               "secret",
+		AuthConfig: config.AuthConfig{
+			AdminURL: srv.URL,
+			Token:    "secret",
+		},
 		OutDir:              dir,
 		ToolboxNativeBinary: toolboxBin,
 	})
