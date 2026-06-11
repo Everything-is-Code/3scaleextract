@@ -7,13 +7,13 @@ import (
 
 func TestParseBackendUsagesArrayFormat(t *testing.T) {
 	data := []byte(`[
-	  {"backend_usage":{"backend_id":495,"path":"/legacy/portalconcesionario/CrearCompensacionDM"}}
+	  {"backend_usage":{"backend_id":495,"path":"/legacy/seed_alpha/create_compensation"}}
 	]`)
 	usages := parseBackendUsages(data)
 	if len(usages) != 1 {
 		t.Fatalf("len = %d", len(usages))
 	}
-	if usages[0].BackendID != 495 || usages[0].Path != "/legacy/portalconcesionario/CrearCompensacionDM" {
+	if usages[0].BackendID != 495 || usages[0].Path != "/legacy/seed_alpha/create_compensation" {
 		t.Fatalf("usage = %+v", usages[0])
 	}
 }
