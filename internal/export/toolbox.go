@@ -23,6 +23,22 @@ type ProductExporter interface {
 	ExportProduct(ctx context.Context, adminURL, token, systemName string) ([]byte, error)
 }
 
+// CommandRunner executes external processes. Inject a mock in tests to avoid real exec.
+type CommandRunner interface {
+	Run(ctx context.Context, command string, args []string) (stdout, stderr []byte, err error)
+}
+
+type execCommandRunner struct{}
+
+func (execCommandRunner) Run(ctx context.Context, command string, args []string) ([]byte, []byte, error) {
+	cmd := exec.CommandContext(ctx, command, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	return stdout.Bytes(), stderr.Bytes(), err
+}
+
 type ToolboxOptions struct {
 	Runtime string // podman or docker; empty auto-detects
 	Image   string
@@ -30,6 +46,8 @@ type ToolboxOptions struct {
 	NativeBinary string
 	// CertFile mounts a CA/cert for toolbox TLS (SSL_CERT_FILE in container).
 	CertFile string
+	// CommandRunner overrides process execution (defaults to os/exec).
+	CommandRunner CommandRunner
 }
 
 type Toolbox struct {
@@ -37,6 +55,7 @@ type Toolbox struct {
 	image        string
 	nativeBinary string
 	certFile     string
+	runner       CommandRunner
 }
 
 func NewToolbox(opts ToolboxOptions) (*Toolbox, error) {
@@ -45,6 +64,10 @@ func NewToolbox(opts ToolboxOptions) (*Toolbox, error) {
 		image:        strings.TrimSpace(opts.Image),
 		nativeBinary: strings.TrimSpace(opts.NativeBinary),
 		certFile:     strings.TrimSpace(opts.CertFile),
+		runner:       opts.CommandRunner,
+	}
+	if t.runner == nil {
+		t.runner = execCommandRunner{}
 	}
 	if t.image == "" {
 		t.image = DefaultToolboxImage
@@ -105,9 +128,8 @@ func buildRemoteURL(adminURL, token string) (string, error) {
 }
 
 func (t *Toolbox) runNative(ctx context.Context, remoteURL, systemName string) ([]byte, error) {
-	// Official syntax: 3scale product export <remote> <product>
 	args := []string{"product", "export", remoteURL, systemName}
-	return runCommand(ctx, t.nativeBinary, args)
+	return t.runCommand(ctx, t.nativeBinary, args)
 }
 
 func (t *Toolbox) runContainer(ctx context.Context, remoteURL, systemName string) ([]byte, error) {
@@ -119,24 +141,20 @@ func (t *Toolbox) runContainer(ctx context.Context, remoteURL, systemName string
 		)
 	}
 	args = append(args, t.image, "3scale", "product", "export", remoteURL, systemName)
-	return runCommand(ctx, t.runtime, args)
+	return t.runCommand(ctx, t.runtime, args)
 }
 
-func runCommand(ctx context.Context, command string, args []string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, command, args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		msg := strings.TrimSpace(stderr.String())
+func (t *Toolbox) runCommand(ctx context.Context, command string, args []string) ([]byte, error) {
+	stdout, stderr, err := t.runner.Run(ctx, command, args)
+	if err != nil {
+		msg := strings.TrimSpace(string(stderr))
 		if msg == "" {
 			msg = err.Error()
 		}
 		return nil, fmt.Errorf("%w: %s", ErrToolboxFailed, msg)
 	}
 
-	out := bytes.TrimSpace(stdout.Bytes())
+	out := bytes.TrimSpace(stdout)
 	if len(out) == 0 {
 		return nil, fmt.Errorf("%w: empty output from %s", ErrToolboxFailed, command)
 	}
