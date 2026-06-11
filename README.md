@@ -144,6 +144,35 @@ go test ./...
 go test -tags=integration ./internal/export/...   # live tenant (THREESCALE_*)
 ```
 
+#### Integration CI
+
+A separate GitHub Actions workflow (`.github/workflows/integration.yml`) runs the live export integration test on demand or on a weekly schedule. It does **not** run on pull requests; PR CI stays offline-only.
+
+**Required repository secrets**
+
+| Secret | Description |
+|--------|-------------|
+| `THREESCALE_ADMIN_URL` | 3scale Admin Portal base URL |
+| `THREESCALE_ACCESS_TOKEN` | Personal Access Token |
+| `THREESCALE_OUTPUT_DIR` | Writable output path on the runner (e.g. `/tmp/3scale-export`) |
+
+**Optional repository secrets**
+
+| Secret | Description |
+|--------|-------------|
+| `THREESCALE_TOOLBOX_IMAGE` | Override default Red Hat toolbox image |
+| `THREESCALE_TOOLBOX_TLS_CERT` | CA/cert file path for toolbox TLS (lab tenants) |
+| `THREESCALE_INSECURE_TLS` | Set to `true` to skip TLS verification for Admin API (lab only) |
+
+**Run the workflow**
+
+1. Configure the secrets under **Settings → Secrets and variables → Actions**.
+2. Open **Actions → Integration → Run workflow**.
+
+The workflow also runs every **Monday at 06:00 UTC**. If required secrets are missing, the job exits successfully with a skip message.
+
+CI uses the Docker toolbox (`THREESCALE_TOOLBOX_RUNTIME=docker`). For local runs you may set `THREESCALE_TOOLBOX_BINARY=3scale` instead. Pulling `registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16` on GitHub-hosted runners may require Red Hat registry credentials; see [Installing the toolbox container image](https://docs.redhat.com/en/documentation/red_hat_3scale_api_management/2.16/html/operating_red_hat_3scale_api_management/the-threescale-toolbox#installing_the_toolbox_container_image).
+
 ---
 
 ## Export layout
