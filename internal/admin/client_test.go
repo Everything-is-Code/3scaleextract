@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -176,5 +177,315 @@ func TestBuildURLAddsJSONSuffix(t *testing.T) {
 	}
 	if !strings.Contains(u, "access_token=tok") {
 		t.Fatalf("missing token in %s", u)
+	}
+}
+
+func TestPostFormSuccess(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s", r.Method)
+		}
+		if ct := r.Header.Get("Content-Type"); ct != "application/x-www-form-urlencoded" {
+			t.Fatalf("content-type = %q", ct)
+		}
+		if err := r.ParseForm(); err != nil {
+			t.Fatal(err)
+		}
+		if r.Form.Get("name") != "demo" {
+			t.Fatalf("form = %v", r.Form)
+		}
+		_, _ = w.Write([]byte(`{"backend_api":{"id":7}}`))
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp struct {
+		BackendAPI struct {
+			ID int `json:"id"`
+		} `json:"backend_api"`
+	}
+	form := make(url.Values)
+	form.Set("name", "demo")
+	if err := client.PostForm(context.Background(), "/backend_apis", form, &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.BackendAPI.ID != 7 {
+		t.Fatalf("id = %d", resp.BackendAPI.ID)
+	}
+}
+
+func TestPutFormSuccess(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Fatalf("method = %s", r.Method)
+		}
+		_, _ = w.Write([]byte(`{"service":{"id":3}}`))
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp map[string]any
+	if err := client.PutForm(context.Background(), "/services/3", url.Values{"name": {"api"}}, &resp); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPutJSONSuccess(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Fatalf("method = %s", r.Method)
+		}
+		if ct := r.Header.Get("Content-Type"); ct != "application/json" {
+			t.Fatalf("content-type = %q", ct)
+		}
+		_, _ = w.Write([]byte(`{"proxy":{"id":99}}`))
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp map[string]any
+	if err := client.PutJSON(context.Background(), "/services/1/proxy", map[string]string{"auth_type": "api_key"}, &resp); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDeleteSuccess(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			t.Fatalf("method = %s", r.Method)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.Delete(context.Background(), "/services/5/applications/9"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWriteMethodsUnrecoverable400(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"bad request"}`))
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.PostForm(context.Background(), "/backend_apis", url.Values{}, &map[string]any{})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "400") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestGetAllPagesBackendAPIsKey(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"backend_apis":[{"id":1},{"id":2}]}`))
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var total int
+	err = client.GetAllPages(context.Background(), "/backend_apis", 10, func(items []json.RawMessage) error {
+		total += len(items)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 2 {
+		t.Fatalf("total = %d", total)
+	}
+}
+
+func TestGetAllPagesItemsKey(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"items":[{"id":9}]}`))
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var total int
+	if err := client.GetAllPages(context.Background(), "/custom", 10, func(items []json.RawMessage) error {
+		total += len(items)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if total != 1 {
+		t.Fatalf("total = %d", total)
+	}
+}
+
+func TestGetAllPagesEmptyResponse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"applications":[]}`))
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	called := false
+	err = client.GetAllPages(context.Background(), "/applications", 10, func([]json.RawMessage) error {
+		called = true
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if called {
+		t.Fatal("expected callback not to run for empty page")
+	}
+}
+
+func TestPutJSONInvalidPayload(t *testing.T) {
+	client, err := NewClient(Options{BaseURL: "https://example.com", Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = client.PutJSON(context.Background(), "/services/1", make(chan int), nil)
+	if err == nil {
+		t.Fatal("expected marshal error")
+	}
+}
+
+func TestPostFormRetryOn500ThenSuccess(t *testing.T) {
+	var attempts int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if atomic.AddInt32(&attempts, 1) < 2 {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write([]byte(`{"backend_api":{"id":1}}`))
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret", MaxRetries: 3})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp map[string]any
+	if err := client.PostForm(context.Background(), "/backend_apis", url.Values{"name": {"demo"}}, &resp); err != nil {
+		t.Fatal(err)
+	}
+	if atomic.LoadInt32(&attempts) < 2 {
+		t.Fatalf("attempts = %d", attempts)
+	}
+}
+
+func TestGetAllPagesFallbackCollectionKey(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"widgets":[{"id":5}]}`))
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var total int
+	if err := client.GetAllPages(context.Background(), "/widgets", 10, func(items []json.RawMessage) error {
+		total += len(items)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if total != 1 {
+		t.Fatalf("total = %d", total)
+	}
+}
+
+func TestGetAllPagesInvalidJSON(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`not-json`))
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.GetAllPages(context.Background(), "/applications", 10, func([]json.RawMessage) error {
+		return nil
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestAcquireRespectsContextCancel(t *testing.T) {
+	block := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		<-block
+	}))
+	defer srv.Close()
+	defer close(block)
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret", MaxConcurrent: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	go func() {
+		_ = client.Get(context.Background(), "/services", &map[string]any{})
+	}()
+	time.Sleep(20 * time.Millisecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err = client.Get(ctx, "/services", &map[string]any{})
+	if err == nil {
+		t.Fatal("expected context error")
+	}
+}
+
+func TestPostFormEmptyResponseBody(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	client, err := NewClient(Options{BaseURL: srv.URL, Token: "secret"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.PostForm(context.Background(), "/backend_apis", nil, nil); err != nil {
+		t.Fatal(err)
 	}
 }
