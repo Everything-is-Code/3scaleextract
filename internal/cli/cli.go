@@ -2,9 +2,7 @@ package cli
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"os"
 	"time"
 
@@ -40,17 +38,10 @@ func RunExport(ctx context.Context, cfg config.ExportConfig) error {
 		return err
 	}
 
-	httpClient := &http.Client{Timeout: 60 * time.Second}
-	if cfg.InsecureTLS {
-		httpClient.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
-		}
-	}
-
 	client, err := admin.NewClient(admin.Options{
 		BaseURL:       adminURL,
 		Token:         cfg.Token,
-		HTTPClient:    httpClient,
+		HTTPClient:    config.NewHTTPClient(cfg.InsecureTLS, 60*time.Second),
 		MaxConcurrent: cfg.MaxConcurrent,
 	})
 	if err != nil {
