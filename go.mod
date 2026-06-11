@@ -1,4 +1,4 @@
-module github.com/fmeneses/3scaleextract
+module github.com/Everything-is-Code/3scaleextract
 
 go 1.22
 

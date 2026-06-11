@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fmeneses/3scaleextract/internal/export"
+	"github.com/Everything-is-Code/3scaleextract/internal/export"
 	"github.com/spf13/pflag"
 )
 

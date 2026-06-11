@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/fmeneses/3scaleextract/internal/config"
+	"github.com/Everything-is-Code/3scaleextract/internal/config"
 )
 
 func TestRunExportMissingAuth(t *testing.T) {

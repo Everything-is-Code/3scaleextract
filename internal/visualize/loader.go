@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/fmeneses/3scaleextract/internal/output"
+	"github.com/Everything-is-Code/3scaleextract/internal/output"
 	"gopkg.in/yaml.v3"
 )
 
