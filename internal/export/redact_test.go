@@ -49,3 +49,52 @@ func TestRedactDirectory(t *testing.T) {
 		t.Fatalf("file still has secret: %s", data)
 	}
 }
+
+func TestContainsCleartextSecretNestedArray(t *testing.T) {
+	raw := []byte(`{"items":[{"user_key":"live"}]}`)
+	if !ContainsCleartextSecret(raw) {
+		t.Fatal("expected secret detected")
+	}
+}
+
+func TestContainsCleartextSecretYAML(t *testing.T) {
+	raw := []byte("client_secret: still-there\n")
+	if !ContainsCleartextSecret(raw) {
+		t.Fatal("expected yaml secret detected")
+	}
+}
+
+func TestContainsCleartextSecretAlreadyRedacted(t *testing.T) {
+	raw := []byte(`{"client_secret":"***REDACTED***"}`)
+	if ContainsCleartextSecret(raw) {
+		t.Fatal("expected no cleartext secret")
+	}
+}
+
+func TestRedactBytesUnsupportedExtension(t *testing.T) {
+	_, err := RedactBytes(".txt", []byte("plain"))
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestRedactJSONNestedStructures(t *testing.T) {
+	raw := []byte(`{"nested":{"items":[{"api_key":"secret"}]}}`)
+	out, err := RedactBytes(".json", raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ContainsCleartextSecret(out) {
+		t.Fatalf("nested secret not redacted: %s", out)
+	}
+}
+
+func TestRedactDirectorySkipsNonJSONYAML(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "readme.txt"), []byte("keep"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := RedactDirectory(dir); err != nil {
+		t.Fatal(err)
+	}
+}
