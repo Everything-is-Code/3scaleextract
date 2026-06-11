@@ -21,16 +21,16 @@ Automation references are verified against the repository at the time of writing
 
 | Metric | Count |
 |--------|------:|
-| Total cases | 17 |
-| Automated | 13 |
+| Total cases | 18 |
+| Automated | 15 |
 | Manual | 2 |
-| Gap | 2 |
+| Gap | 1 |
 
 | Priority | Count |
 |----------|------:|
 | P0 | 5 |
 | P1 | 5 |
-| P2 | 5 |
+| P2 | 6 |
 | P3 | 2 |
 
 ---
@@ -43,7 +43,7 @@ Automation references are verified against the repository at the time of writing
 |-------|-------|
 | Priority | P0 |
 | CLI | `threescale-export` |
-| Automation | `TestExportDefaultScope` (`internal/export/exporter_test.go`) |
+| Automation | `TestExportDefaultScope` (`internal/export/exporter_test.go`), `TestVerifyExportLayout`, `TestExportGoldenLayout` (`internal/export/verify_test.go`) |
 
 **Preconditions**
 
@@ -65,6 +65,8 @@ Automation references are verified against the repository at the time of writing
 **Notes**
 
 - Unit test uses mock Admin API and mock toolbox. Live behavior is covered by TC-CI-002.
+- `TestVerifyExportLayout` asserts manifest fields and on-disk counts after mock export.
+- `TestExportGoldenLayout` compares relative paths to `internal/export/testdata/golden-export-layout.txt` (10 files for default mock scope).
 
 ---
 
@@ -191,6 +193,32 @@ Automation references are verified against the repository at the time of writing
 **Notes**
 
 - Lab-only configuration. Do not use `--insecure` in production.
+
+---
+
+### TC-EXP-007 — Strict export (`--strict`)
+
+| Field | Value |
+|-------|-------|
+| Priority | P2 |
+| CLI | `threescale-export` |
+| Automation | `TestExportStrictFailsOnMissingSidecar` (`internal/export/verify_test.go`), `TestExportRecordsWarningsOnSkippedSidecars` (`internal/export/exporter_test.go`) |
+
+**Preconditions**
+
+- Valid credentials and toolbox (same as TC-EXP-001)
+- At least one product sidecar GET fails (mock: missing optional JSON such as `oidc_configuration.json`)
+
+**Steps**
+
+1. Run export **without** `--strict` when a sidecar is unavailable
+2. Run export **with** `--strict` under the same failure condition
+
+**Expected results**
+
+- Default: export completes with `manifest.warnings[]` entries and `incomplete: true` when sidecars are skipped (`RecordSkip`)
+- `--strict`: export aborts with `ErrStrictSidecar`; manifest may still be written with `incomplete: true`
+- Visualizer surfaces warnings in the report index (`## Export warnings`)
 
 ---
 
@@ -443,7 +471,7 @@ Automation references are verified against the repository at the time of writing
 |-------|-------|
 | Priority | P3 |
 | CLI | GitHub Actions `CI` workflow |
-| Automation | `.github/workflows/ci.yml` |
+| Automation | `.github/workflows/ci.yml`, `scripts/check-coverage.sh`, `scripts/pack-export-minimal.sh --check` |
 
 **Preconditions**
 
@@ -455,8 +483,10 @@ Automation references are verified against the repository at the time of writing
 
 **Expected results**
 
-- `go test ./...` passes (integration tag excluded)
-- golangci-lint passes
+- `go test ./...` passes (integration tag excluded) with coverage profile
+- Statement coverage meets the repository threshold (currently 80% via `check-coverage.sh`)
+- golangci-lint passes (includes `revive`, `bodyclose`, `errorlint`)
+- `export-minimal` tarball freshness check passes
 - All three CLI binaries build successfully
 
 ---
@@ -467,7 +497,7 @@ Automation references are verified against the repository at the time of writing
 |-------|-------|
 | Priority | P3 |
 | CLI | GitHub Actions `Integration` workflow |
-| Automation | `.github/workflows/integration.yml`, `TestIntegrationExport` (`internal/export/integration_test.go`) |
+| Automation | `.github/workflows/integration.yml`, `TestIntegrationExport`, `export.VerifyExport` (`internal/export/integration_test.go`, `internal/export/verify.go`) |
 
 **Preconditions**
 
@@ -482,11 +512,12 @@ Automation references are verified against the repository at the time of writing
 **Expected results**
 
 - With secrets: `go test -tags=integration ./internal/export/...` runs live export
+- After live export: `VerifyExport` checks `manifest.json` (schema 1.0, `admin_url`, `exported_at`), required directories, and product/backend file counts
 - Without secrets: job succeeds with skip message (no spurious failure)
 
 **Notes**
 
-- **Gap:** integration test asserts `err == nil` only; export file layout and manifest fields are not validated in CI yet.
+- `VerifyExport` does not fail on `incomplete: true` — lab tenants may have partial sidecars; use `--strict` locally when you need fail-fast behavior (TC-EXP-007).
 
 ---
 
@@ -498,8 +529,6 @@ Cases or aspects marked `gap` — candidates for future `[TEST]` issues:
 |-----|--------------|---------------------|
 | Visualize CLI smoke against fixture | TC-VIZ-003 | Add `cmd/threescale-visualize` test with `export-minimal` |
 | Full pipeline automation | TC-PIPE-001 | Script or e2e test for seed → export → visualize |
-| Integration output assertions | TC-CI-002 | Assert manifest and key files after live export |
-| Export CLI main smoke | — | Add `cmd/threescale-export/main_test.go` (`--help`, missing auth) |
 | Offline fixture parity | TC-VIZ-001 | [#10](https://github.com/Everything-is-Code/3scaleextract/issues/10) — versioned `export-minimal` tarball aligned with seed catalog |
 
 Implementing these gaps is **out of scope** for the test-case definition work ([issue #3](https://github.com/Everything-is-Code/3scaleextract/issues/3)).
