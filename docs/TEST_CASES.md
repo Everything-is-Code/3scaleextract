@@ -327,7 +327,7 @@ Automation references are verified against the repository at the time of writing
 **Preconditions**
 
 - Valid export directory with `manifest.json` schema 1.0
-- Offline fixture: `internal/visualize/testdata/export-minimal/`
+- Offline fixture: `internal/visualize/testdata/export-minimal/` or published tarball `testdata/export-minimal-1.0.tar.gz` ([testdata/README.md](../testdata/README.md))
 
 **Steps**
 
