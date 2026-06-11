@@ -18,6 +18,7 @@ type Options struct {
 	OutDir              string
 	IncludeApplications bool
 	RedactSecrets       bool
+	Strict              bool
 	MaxConcurrent       int
 	PerPage             int
 }
@@ -203,6 +204,9 @@ func (s *Service) exportService(ctx context.Context, writer *output.Writer, opts
 	for _, f := range fetches {
 		var payload json.RawMessage
 		if err := s.client.Get(ctx, f.path, &payload); err != nil {
+			if opts.Strict {
+				return fmt.Errorf("%w: product %s: skipped %s (%s): %w", ErrStrictSidecar, svc.SystemName, f.file, f.path, err)
+			}
 			manifest.RecordSkip(svc.SystemName, f.file, f.path, err)
 			continue
 		}
