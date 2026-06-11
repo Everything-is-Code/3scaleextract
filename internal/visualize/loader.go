@@ -1,6 +1,7 @@
 package visualize
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -286,19 +287,35 @@ func parsePolicies(data []byte) []Policy {
 }
 
 func parseBackendUsages(data []byte) []BackendUsage {
-	var envelope struct {
-		BackendUsages []struct {
-			BackendUsage struct {
-				BackendID int    `json:"backend_id"`
-				Path      string `json:"path"`
-			} `json:"backend_usage"`
-		} `json:"backend_usages"`
+	type usageEntry struct {
+		BackendUsage struct {
+			BackendID int    `json:"backend_id"`
+			Path      string `json:"path"`
+		} `json:"backend_usage"`
 	}
-	if err := json.Unmarshal(data, &envelope); err != nil {
+
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) == 0 {
 		return nil
 	}
-	out := make([]BackendUsage, 0, len(envelope.BackendUsages))
-	for _, item := range envelope.BackendUsages {
+
+	var entries []usageEntry
+	if trimmed[0] == '[' {
+		if err := json.Unmarshal(trimmed, &entries); err != nil {
+			return nil
+		}
+	} else {
+		var envelope struct {
+			BackendUsages []usageEntry `json:"backend_usages"`
+		}
+		if err := json.Unmarshal(trimmed, &envelope); err != nil {
+			return nil
+		}
+		entries = envelope.BackendUsages
+	}
+
+	out := make([]BackendUsage, 0, len(entries))
+	for _, item := range entries {
 		out = append(out, BackendUsage{
 			BackendID: item.BackendUsage.BackendID,
 			Path:      item.BackendUsage.Path,
