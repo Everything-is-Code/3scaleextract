@@ -47,6 +47,10 @@ jobs:
           ( cd dist && sha256sum threescale-seed-v"${VERSION}"-linux-amd64.tar.gz > threescale-seed-v"${VERSION}"-linux-amd64.tar.gz.sha256 )
           ( cd dist && sha256sum threescale-visualize-v"${VERSION}"-linux-amd64.tar.gz > threescale-visualize-v"${VERSION}"-linux-amd64.tar.gz.sha256 )
 
+          ./scripts/pack-export-minimal.sh
+          cp testdata/export-minimal-1.0.tar.gz dist/
+          cp testdata/export-minimal-1.0.tar.gz.sha256 dist/
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -58,6 +62,8 @@ jobs:
             dist/threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
             dist/threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
             dist/threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
+            dist/export-minimal-1.0.tar.gz
+            dist/export-minimal-1.0.tar.gz.sha256
           body: |
             ## Download (clients)
 
@@ -71,6 +77,7 @@ jobs:
 
             - `threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — see [docs/SEED.md](https://github.com/${{ github.repository }}/blob/main/docs/SEED.md)
             - `threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — see [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md)
+            - `export-minimal-1.0.tar.gz` — offline export fixture; see [testdata/README.md](https://github.com/${{ github.repository }}/blob/main/testdata/README.md)
 
             ## Verification
 
