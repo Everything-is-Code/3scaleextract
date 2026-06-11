@@ -1,64 +1,64 @@
-# Visualizador de export (threescale-visualize)
+# Export visualizer (threescale-visualize)
 
-Herramienta **opcional** que genera un informe Markdown a partir del directorio exportado por `threescale-export`. Útil para revisiones de migración sin abrir JSON/YAML manualmente.
+**Optional** tool that generates a Markdown report from a directory exported by `threescale-export`. Useful for migration reviews without opening JSON/YAML manually.
 
-Para exportar un tenant, usa el [README principal](../README.md).
+To export a tenant, use the [main README](../README.md).
 
-## Requisitos
+## Requirements
 
-- Go 1.22+ (solo para compilar; el binario de release no requiere Go)
-- Un export existente con `schema_version` **1.0** (`manifest.json` en la raíz)
-- **No** requiere Admin API, Docker ni variables `THREESCALE_*`
+- Go 1.22+ (to compile; release binary does not require Go)
+- An existing export with `schema_version` **1.0** (`manifest.json` at the root)
+- **No** Admin API, Docker, or `THREESCALE_*` variables required
 
-## Instalar
+## Install
 
 ```bash
 go build -o bin/threescale-visualize ./cmd/threescale-visualize
 ```
 
-O descarga el tarball `threescale-visualize-v*.*.*-linux-amd64.tar.gz` desde [Releases](https://github.com/Everything-is-Code/3scaleextract/releases).
+Or download `threescale-visualize-v*.*.*-linux-amd64.tar.gz` from [Releases](https://github.com/Everything-is-Code/3scaleextract/releases).
 
-## Uso
+## Usage
 
 ```bash
-# Tras un export (por defecto ./export)
+# After an export (default ./export)
 bin/threescale-visualize ./export -o ./report
 ```
 
-| Flag | Descripción |
+| Flag | Description |
 |------|-------------|
-| `-o`, `--output` | Directorio del informe (default `./report`) |
-| `--version` | Versión del binario |
+| `-o`, `--output` | Report directory (default `./report`) |
+| `--version` | Binary version |
 
-## Contenido del informe
+## Report layout
 
 ```
 report/
-├── index.md              # overview, auth matrix, grafo Mermaid
-├── backends.md           # catálogo de backends
-├── applications.md       # solo si el export incluyó applications
+├── index.md              # overview, auth matrix, Mermaid graph
+├── backends.md           # backend catalog
+├── applications.md       # only if export included applications
 └── products/
-    └── {system_name}.md  # auth, policies, planes, backends
+    └── {system_name}.md  # auth, policies, plans, backends
 ```
 
-Abre `index.md` en GitHub, VS Code o Cursor para navegar por enlaces relativos. Los diagramas Mermaid se renderizan en GitHub y en editores compatibles.
+Open `index.md` in GitHub, VS Code, or Cursor to navigate via relative links. Mermaid diagrams render on GitHub and in compatible editors.
 
-## Demo con datos seed
+## Demo with seed data
 
 ```bash
-# 1. Cargar fixtures (ver docs/SEED.md)
+# 1. Load fixtures (see docs/SEED.md)
 bin/threescale-seed
 
-# 2. Exportar tenant de lab
+# 2. Export lab tenant
 bin/threescale-export --output ./export --include-applications --redact-secrets
 
-# 3. Generar informe
+# 3. Generate report
 bin/threescale-visualize ./export -o ./report
 ```
 
-## Limitaciones (v1)
+## Limitations (v1)
 
-- Solo lectura del export en disco; no llama a Admin API
-- No incluye contenido de `policies/catalog.json` (referencia global, no config del tenant)
-- Secretos enmascarados (`***REDACTED***`) se muestran tal cual — no se de-redactan
-- Sin servidor HTTP ni HTML (previsto para versiones futuras)
+- Read-only from on-disk export; does not call Admin API
+- Does not include `policies/catalog.json` content (global reference, not tenant config)
+- Redacted secrets (`***REDACTED***`) are shown as-is — not de-redacted
+- No HTTP server or HTML (planned for future versions)
