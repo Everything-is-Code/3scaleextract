@@ -206,7 +206,7 @@ func (c *HTTPClient) doWrite(ctx context.Context, method, path string, payload [
 	}
 
 	if lastErr != nil {
-		return nil, fmt.Errorf("%w: %v", ErrUnrecoverable, lastErr)
+		return nil, fmt.Errorf("%w: %w", ErrUnrecoverable, lastErr)
 	}
 	return nil, ErrUnrecoverable
 }
@@ -286,7 +286,7 @@ func (c *HTTPClient) doRequest(ctx context.Context, path string, page, perPage i
 	}
 
 	if lastErr != nil {
-		return nil, fmt.Errorf("%w: %v", ErrUnrecoverable, lastErr)
+		return nil, fmt.Errorf("%w: %w", ErrUnrecoverable, lastErr)
 	}
 	return nil, ErrUnrecoverable
 }

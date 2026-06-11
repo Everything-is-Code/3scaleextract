@@ -4,12 +4,20 @@ run:
 
 linters:
   enable:
+    - bodyclose
     - errcheck
+    - errorlint
     - gosimple
     - govet
     - ineffassign
     - staticcheck
     - unused
+
+linters-settings:
+  errorlint:
+    errorf: true
+    asserts: true
+    comparison: true
 
 issues:
   exclude-dirs:
