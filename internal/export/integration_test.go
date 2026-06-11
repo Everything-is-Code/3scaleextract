@@ -61,13 +61,22 @@ func TestIntegrationExport(t *testing.T) {
 		t.Fatal(err)
 	}
 	svc := export.NewService(client, integrationToolbox(t))
-	_, err = svc.Export(context.Background(), export.Options{
+	manifest, err := svc.Export(context.Background(), export.Options{
 		AdminURL: adminURL,
 		Token:    token,
 		OutDir:   outDir,
 		PerPage:  500,
 	})
 	if err != nil {
+		t.Fatal(err)
+	}
+	if manifest == nil {
+		t.Fatal("expected manifest")
+	}
+	if manifest.SchemaVersion != "1.0" {
+		t.Fatalf("schema_version = %q", manifest.SchemaVersion)
+	}
+	if err := export.VerifyExport(outDir); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -1,0 +1,10 @@
+backends/billing-backend.json
+manifest.json
+policies/catalog.json
+products/payments.yaml
+products/payments/application_plans.json
+products/payments/backend_usages.json
+products/payments/metrics.json
+products/payments/oidc_configuration.json
+products/payments/policies.json
+products/payments/proxy.json

@@ -64,6 +64,7 @@ func RunExport(ctx context.Context, cfg config.ExportConfig) error {
 		OutDir:              cfg.OutDir,
 		IncludeApplications: cfg.IncludeApplications,
 		RedactSecrets:       cfg.RedactSecrets,
+		Strict:              cfg.Strict,
 		MaxConcurrent:       cfg.MaxConcurrent,
 		PerPage:             cfg.PerPage,
 	})
