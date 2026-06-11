@@ -5,6 +5,27 @@ import (
 	"testing"
 )
 
+func TestParseBackendUsagesArrayFormat(t *testing.T) {
+	data := []byte(`[
+	  {"backend_usage":{"backend_id":495,"path":"/legacy/portalconcesionario/CrearCompensacionDM"}}
+	]`)
+	usages := parseBackendUsages(data)
+	if len(usages) != 1 {
+		t.Fatalf("len = %d", len(usages))
+	}
+	if usages[0].BackendID != 495 || usages[0].Path != "/legacy/portalconcesionario/CrearCompensacionDM" {
+		t.Fatalf("usage = %+v", usages[0])
+	}
+}
+
+func TestParseBackendUsagesWrappedFormat(t *testing.T) {
+	data := []byte(`{"backend_usages":[{"backend_usage":{"backend_id":100,"path":"/payments"}}]}`)
+	usages := parseBackendUsages(data)
+	if len(usages) != 1 || usages[0].BackendID != 100 {
+		t.Fatalf("usage = %+v", usages)
+	}
+}
+
 func TestParseOIDCConfigurationNested(t *testing.T) {
 	data := []byte(`{"oidc":{"issuer_type":"keycloak","issuer_endpoint":"https://sso.example.com/realm/demo"}}`)
 	cfg := parseOIDCConfiguration(data)
