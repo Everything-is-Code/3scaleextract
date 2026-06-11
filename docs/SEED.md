@@ -1,96 +1,96 @@
-# Datos de prueba (threescale-seed)
+# Lab fixtures (threescale-seed)
 
-Herramienta **opcional** de desarrollo/demo. Carga fixtures en un tenant 3scale vía **Admin API** para validar `threescale-export` — no forma parte del flujo de migración en producción.
+**Optional** development/demo tool. Loads fixtures into a 3scale tenant via the **Admin API** to validate `threescale-export` — not part of the production migration flow.
 
-Para exportar un tenant real, usa el [README principal](../README.md).
+To export a real tenant, use the [main README](../README.md).
 
-## Requisitos
+## Requirements
 
 - Go 1.22+
-- Personal Access Token con permisos de administración en el tenant de lab
-- **No** requiere Podman/Docker (solo usa Admin API)
+- Personal Access Token with admin permissions on the lab tenant
+- **No** Podman/Docker required (Admin API only)
 
-## Instalar
+## Install
 
 ```bash
 go build -o bin/threescale-seed ./cmd/threescale-seed
 ```
 
-## Configuración
+## Configuration
 
 ```bash
-cp .env.example .env   # editar URL y token; .env está en .gitignore
+cp .env.example .env   # edit URL and token; .env is gitignored
 source scripts/load-env.sh
 ```
 
-Variables mínimas:
+Minimum variables:
 
-| Variable | Descripción |
+| Variable | Description |
 |----------|-------------|
-| `THREESCALE_ADMIN_URL` | URL del Admin Portal |
+| `THREESCALE_ADMIN_URL` | Admin Portal URL |
 | `THREESCALE_ACCESS_TOKEN` | Personal Access Token |
 
-## Fixtures incluidos
+## Included fixtures
 
-| Producto | Auth | Backends | Policies | Applications |
-|----------|------|----------|----------|--------------|
+| Product | Auth | Backends | Policies | Applications |
+|---------|------|----------|----------|--------------|
 | `seed_api_key` | API Key | 1 (`seed_payments`) | `cors` | 2 |
-| `seed_oidc` | OIDC (RH-SSO simulado) | 1 (`seed_billing`) | `jwt_claim_check`, `cors` | 1 (con `client_id` / `client_secret`) |
+| `seed_oidc` | OIDC (simulated RH-SSO) | 1 (`seed_billing`) | `jwt_claim_check`, `cors` | 1 (with `client_id` / `client_secret`) |
 | `seed_app_id` | App ID + App Key | 2 | `ip_check`, `cors` | 3 |
 | `seed_multi_backend` | API Key | 3 | `edge_limit`, `url_rewriting` | 5 |
 
-Backends compartidos: `seed_payments`, `seed_inventory`, `seed_billing`.
+Shared backends: `seed_payments`, `seed_inventory`, `seed_billing`.
 
-### Matriz de cobertura del export
+### Export coverage matrix
 
-Cada fixture valida dimensiones concretas del output de `threescale-export`:
+Each fixture validates specific dimensions of `threescale-export` output:
 
-| Producto | Qué verificar en `./export` |
-|----------|----------------------------|
-| `seed_api_key` | `authentication.userkey`, policies CORS, 2 applications con `user_key` |
-| `seed_oidc` | `authentication.oidc`, `oidc_configuration.json`, `client_id` en applications |
-| `seed_app_id` | App ID/Key auth, pricing rules, policies IP check |
-| `seed_multi_backend` | 3 `backend_usages`, policies edge limit y URL rewriting |
+| Product | What to verify in `./export` |
+|---------|------------------------------|
+| `seed_api_key` | `authentication.userkey`, CORS policies, 2 applications with `user_key` |
+| `seed_oidc` | `authentication.oidc`, `oidc_configuration.json`, `client_id` on applications |
+| `seed_app_id` | App ID/Key auth, pricing rules, IP check policies |
+| `seed_multi_backend` | 3 `backend_usages`, edge limit and URL rewriting policies |
 
-### OIDC / RH-SSO simulado
+### Simulated OIDC / RH-SSO
 
-El producto `seed_oidc` configura:
+The `seed_oidc` product configures:
 
-- `backend_version=oidc` en el servicio
-- Issuer Keycloak con credenciales Zync: `https://zync-admin:…@sso.example.com/auth/realms/seed-demo`
+- `backend_version=oidc` on the service
+- Keycloak issuer with Zync credentials: `https://zync-admin:…@sso.example.com/auth/realms/seed-demo`
 - Flows: standard + service accounts
-- Applications OIDC con `client_id` y `client_secret` (no `user_key`)
+- OIDC applications with `client_id` and `client_secret` (not `user_key`)
 
-> El IdP es ficticio (`sso.example.com`). Sirve para probar el export, no para tráfico real.
+> The IdP is fictional (`sso.example.com`). Used to test export, not real traffic.
 
-## Uso
+## Usage
 
 ```bash
 source scripts/load-env.sh
 
-# Ver plan de fixtures
+# Show fixture plan
 bin/threescale-seed --list-fixtures
 
-# Cargar en tenant (idempotente con --skip-existing)
+# Load into tenant (idempotent with --skip-existing)
 bin/threescale-seed --skip-existing
 ```
 
 ### Flags
 
-| Flag | Descripción |
+| Flag | Description |
 |------|-------------|
-| `--skip-existing` | Omite recursos ya presentes por `system_name` (default: `true`) |
-| `--dry-run` | Muestra fixtures sin llamar a la Admin API |
-| `--list-fixtures` | Imprime la matriz de cobertura y sale |
-| `--admin-url`, `--token`, `--insecure` | Credenciales (o variables `THREESCALE_*`) |
+| `--skip-existing` | Skip resources already present by `system_name` (default: `true`) |
+| `--dry-run` | Print fixtures without calling Admin API |
+| `--list-fixtures` | Print coverage matrix and exit |
+| `--admin-url`, `--token`, `--insecure` | Credentials (or `THREESCALE_*` env vars) |
 
-### Comportamiento OIDC al re-ejecutar
+### OIDC behavior on re-run
 
-Cada ejecución del seed **recrea las applications OIDC** del producto `seed_oidc` para evitar credenciales API Key obsoletas. Los `client_id` / `client_secret` cambiarán entre ejecuciones.
+Each seed run **recreates OIDC applications** for `seed_oidc` to avoid stale API Key credentials. `client_id` / `client_secret` will change between runs.
 
-## Seed + export en un paso (lab)
+## One-step seed + export (lab)
 
-Script de conveniencia para pipelines locales o CI de demo:
+Convenience script for local pipelines or demo CI:
 
 ```bash
 chmod +x scripts/demo/seed-and-export.sh
@@ -98,19 +98,19 @@ source scripts/load-env.sh
 ./scripts/demo/seed-and-export.sh
 ```
 
-El script compila ambos binarios, ejecuta el seed y exporta a `THREESCALE_OUTPUT_DIR` (default `./export`).
+The script builds both binaries, runs seed, and exports to `THREESCALE_OUTPUT_DIR` (default `./export`).
 
-## Código
+## Code
 
-| Ruta | Descripción |
+| Path | Description |
 |------|-------------|
-| `cmd/threescale-seed/` | CLI del seeder |
-| `internal/seed/fixtures.go` | Catálogo de fixtures |
-| `internal/seed/seeder.go` | Lógica Admin API |
-| `internal/seed/policies.go` | Configuraciones de policy chain |
-| `scripts/demo/seed-and-export.sh` | Flujo lab seed → export |
+| `cmd/threescale-seed/` | Seeder CLI |
+| `internal/seed/fixtures.go` | Fixture catalog |
+| `internal/seed/seeder.go` | Admin API logic |
+| `internal/seed/policies.go` | Policy chain configurations |
+| `scripts/demo/seed-and-export.sh` | Lab seed → export flow |
 
-Comparte el cliente HTTP con el exportador (`internal/admin`, `internal/config`).
+Shares HTTP client with the exporter (`internal/admin`, `internal/config`).
 
 ## Tests
 

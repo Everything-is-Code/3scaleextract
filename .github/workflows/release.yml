@@ -59,20 +59,20 @@ jobs:
             dist/threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
             dist/threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
           body: |
-            ## Descarga (clientes)
+            ## Download (clients)
 
             1. `threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz`
             2. `tar xzf threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz`
             3. `chmod +x threescale-export`
 
-            Ver [README](https://github.com/${{ github.repository }}#inicio-rápido) para dependencias (Docker + imagen toolbox) y variables de entorno.
+            See [README](https://github.com/${{ github.repository }}#run-the-binary) for dependencies (Docker + toolbox image) and environment variables.
 
-            ## Lab / demo (opcional)
+            ## Lab / demo (optional)
 
-            - `threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — ver [docs/SEED.md](https://github.com/${{ github.repository }}/blob/main/docs/SEED.md)
-            - `threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — ver [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md)
+            - `threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — see [docs/SEED.md](https://github.com/${{ github.repository }}/blob/main/docs/SEED.md)
+            - `threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — see [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md)
 
-            ## Verificación
+            ## Verification
 
             ```bash
             sha256sum -c threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
