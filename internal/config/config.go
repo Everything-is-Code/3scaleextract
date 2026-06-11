@@ -21,14 +21,12 @@ var (
 )
 
 type ExportConfig struct {
-	AdminURL            string
-	Token               string
+	AuthConfig
 	OutDir              string
 	IncludeApplications bool
 	RedactSecrets       bool
 	PerPage             int
 	MaxConcurrent       int
-	InsecureTLS         bool
 	ToolboxImage        string
 	ToolboxRuntime      string
 	ToolboxNativeBinary string
@@ -37,27 +35,16 @@ type ExportConfig struct {
 
 func LoadExportFromEnv() (ExportConfig, error) {
 	cfg := ExportConfig{
-		AdminURL:      strings.TrimSpace(os.Getenv("THREESCALE_ADMIN_URL")),
-		Token:         strings.TrimSpace(os.Getenv("THREESCALE_ACCESS_TOKEN")),
-		OutDir:        strings.TrimSpace(os.Getenv("THREESCALE_OUTPUT_DIR")),
-		PerPage:       DefaultPerPage,
-		MaxConcurrent: DefaultMaxConcurrent,
-		ToolboxImage:  strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_IMAGE")),
-		ToolboxRuntime: strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_RUNTIME")),
-		ToolboxNativeBinary: strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_BINARY")),
-		ToolboxCertFile: strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_TLS_CERT")),
+		AuthConfig:            LoadAuthFromEnv(),
+		OutDir:                strings.TrimSpace(os.Getenv("THREESCALE_OUTPUT_DIR")),
+		PerPage:               DefaultPerPage,
+		MaxConcurrent:         DefaultMaxConcurrent,
+		ToolboxImage:          strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_IMAGE")),
+		ToolboxRuntime:        strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_RUNTIME")),
+		ToolboxNativeBinary:   strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_BINARY")),
+		ToolboxCertFile:       strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_TLS_CERT")),
 	}
 	return cfg, cfg.ValidateAuth()
-}
-
-func (c ExportConfig) ValidateAuth() error {
-	if c.AdminURL == "" {
-		return ErrMissingAdminURL
-	}
-	if c.Token == "" {
-		return ErrMissingToken
-	}
-	return nil
 }
 
 func (c ExportConfig) ValidateOutput() error {
@@ -71,14 +58,12 @@ func (c ExportConfig) ValidateOutput() error {
 }
 
 func BindExportFlags(fs *pflag.FlagSet, cfg *ExportConfig) {
-	fs.StringVar(&cfg.AdminURL, "admin-url", cfg.AdminURL, "3scale Admin Portal base URL")
-	fs.StringVar(&cfg.Token, "token", cfg.Token, "3scale Personal Access Token")
+	BindAuthFlags(fs, &cfg.AuthConfig)
 	fs.StringVar(&cfg.OutDir, "output", cfg.OutDir, "export output directory")
 	fs.BoolVar(&cfg.IncludeApplications, "include-applications", cfg.IncludeApplications, "export applications and linked accounts")
 	fs.BoolVar(&cfg.RedactSecrets, "redact-secrets", cfg.RedactSecrets, "mask API keys and OIDC secrets in output")
 	fs.IntVar(&cfg.PerPage, "per-page", cfg.PerPage, "Admin API page size (max 500)")
 	fs.IntVar(&cfg.MaxConcurrent, "concurrency", cfg.MaxConcurrent, "max concurrent Admin API requests")
-	fs.BoolVar(&cfg.InsecureTLS, "insecure", cfg.InsecureTLS, "skip TLS certificate verification")
 	fs.StringVar(&cfg.ToolboxImage, "toolbox-image", cfg.ToolboxImage, "3scale toolbox container image (Red Hat official)")
 	fs.StringVar(&cfg.ToolboxRuntime, "toolbox-runtime", cfg.ToolboxRuntime, "container runtime for toolbox (docker or podman; auto-detects if empty)")
 	fs.StringVar(&cfg.ToolboxNativeBinary, "toolbox-binary", cfg.ToolboxNativeBinary, "optional local 3scale binary instead of container")
