@@ -312,7 +312,7 @@ func productApplications(t *Tenant, systemName string) []Application {
 
 func authLabel(authType string) string {
 	switch authType {
-	case "api_key", "api_key_and_app_id":
+	case "api_key", "api_key_and_app_id", "user_key", "userkey":
 		return "API Key"
 	case "app_key", "app_id_and_app_key":
 		return "App ID + App Key"
