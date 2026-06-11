@@ -21,6 +21,10 @@ func main() {
 }
 
 func run() int {
+	return executeSeed(nil)
+}
+
+func newSeedCommand() *cobra.Command {
 	cfg := config.LoadAuthFromEnv()
 	skipExisting := true
 	dryRun := false
@@ -45,7 +49,14 @@ See docs/SEED.md for fixtures, OIDC setup, and the demo seed-and-export script.`
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "validate fixture plan without calling Admin API")
 	cmd.Flags().BoolVar(&listFixtures, "list-fixtures", false, "show fixture coverage matrix and exit")
 	cmd.Version = version.Version
+	return cmd
+}
 
+func executeSeed(args []string) int {
+	cmd := newSeedCommand()
+	if args != nil {
+		cmd.SetArgs(args)
+	}
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return 1

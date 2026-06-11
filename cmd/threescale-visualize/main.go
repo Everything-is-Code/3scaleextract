@@ -14,6 +14,10 @@ func main() {
 }
 
 func run() int {
+	return executeVisualize(nil)
+}
+
+func newVisualizeCommand() *cobra.Command {
 	outputDir := "./report"
 
 	cmd := &cobra.Command{
@@ -34,7 +38,14 @@ See docs/VISUALIZE.md for usage and report layout.`,
 	}
 	cmd.Flags().StringVarP(&outputDir, "output", "o", "./report", "report output directory")
 	cmd.Version = version.Version
+	return cmd
+}
 
+func executeVisualize(args []string) int {
+	cmd := newVisualizeCommand()
+	if args != nil {
+		cmd.SetArgs(args)
+	}
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return 1
