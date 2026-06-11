@@ -140,6 +140,33 @@ func TestWriteReportIncompleteBanner(t *testing.T) {
 	}
 }
 
+func TestWriteReportManifestWarnings(t *testing.T) {
+	tenant, err := LoadExport(filepath.Join("testdata", "export-minimal"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	tenant.Manifest.Incomplete = true
+	tenant.Manifest.Warnings = []string{
+		"product payments: skipped oidc_configuration.json (/services/10/proxy/oidc_configuration: unrecoverable)",
+	}
+
+	out := t.TempDir()
+	if err := WriteReport(tenant, out); err != nil {
+		t.Fatal(err)
+	}
+	index, err := os.ReadFile(filepath.Join(out, "index.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(index)
+	if !strings.Contains(text, "## Export warnings") {
+		t.Fatalf("missing warnings section: %s", text)
+	}
+	if !strings.Contains(text, "oidc_configuration.json") {
+		t.Fatalf("missing warning detail: %s", text)
+	}
+}
+
 func TestWriteReportValidation(t *testing.T) {
 	if err := WriteReport(nil, t.TempDir()); err == nil {
 		t.Fatal("expected error for nil tenant")
