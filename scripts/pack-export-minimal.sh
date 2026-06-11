@@ -37,7 +37,11 @@ fi
 pack_to() {
 	local dest="$1"
 	mkdir -p "$(dirname "${dest}")"
-	tar czf "${dest}" -C "${SOURCE_PARENT}" export-minimal
+	# Reproducible archive: fixed mtime/owner and sorted names (CI vs local).
+	tar --sort=name \
+		--mtime='UTC 2020-01-01' \
+		--owner=0 --group=0 --numeric-owner \
+		-czf "${dest}" -C "${SOURCE_PARENT}" export-minimal
 }
 
 if [[ "${check_mode}" == true ]]; then
