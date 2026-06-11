@@ -8,7 +8,7 @@ import (
 )
 
 func TestValidateAuthMissingURL(t *testing.T) {
-	cfg := ExportConfig{Token: "tok"}
+	cfg := ExportConfig{AuthConfig: AuthConfig{Token: "tok"}}
 	err := cfg.ValidateAuth()
 	if !errors.Is(err, ErrMissingAdminURL) {
 		t.Fatalf("err = %v", err)
@@ -16,7 +16,7 @@ func TestValidateAuthMissingURL(t *testing.T) {
 }
 
 func TestValidateAuthMissingToken(t *testing.T) {
-	cfg := ExportConfig{AdminURL: "https://tenant.example.com"}
+	cfg := ExportConfig{AuthConfig: AuthConfig{AdminURL: "https://tenant.example.com"}}
 	err := cfg.ValidateAuth()
 	if !errors.Is(err, ErrMissingToken) {
 		t.Fatalf("err = %v", err)
@@ -25,8 +25,10 @@ func TestValidateAuthMissingToken(t *testing.T) {
 
 func TestValidateOutputRequiresDir(t *testing.T) {
 	cfg := ExportConfig{
-		AdminURL: "https://tenant.example.com",
-		Token:    "tok",
+		AuthConfig: AuthConfig{
+			AdminURL: "https://tenant.example.com",
+			Token:    "tok",
+		},
 	}
 	err := cfg.ValidateOutput()
 	if err == nil || err.Error() != "output directory is required: use --output" {
