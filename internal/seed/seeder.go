@@ -2,7 +2,6 @@ package seed
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -587,42 +586,6 @@ func (s *Seeder) findAccountByUsername(ctx context.Context, username string) (in
 		}
 		if strings.EqualFold(item.Account.OrgName, "Seed Demo Organization") {
 			return item.Account.ID, true
-		}
-	}
-	return 0, false
-}
-
-func (s *Seeder) findBySystemName(ctx context.Context, path, rootKey, itemKey, systemName string) (int, bool) {
-	raw := map[string]json.RawMessage{}
-	if err := s.client.Get(ctx, path, &raw); err != nil {
-		return 0, false
-	}
-	itemsRaw, ok := raw[rootKey]
-	if !ok {
-		return 0, false
-	}
-	var items []json.RawMessage
-	if err := json.Unmarshal(itemsRaw, &items); err != nil {
-		return 0, false
-	}
-	for _, itemRaw := range items {
-		var wrap map[string]json.RawMessage
-		if err := json.Unmarshal(itemRaw, &wrap); err != nil {
-			continue
-		}
-		entityRaw, ok := wrap[itemKey]
-		if !ok {
-			continue
-		}
-		var entity struct {
-			ID         int    `json:"id"`
-			SystemName string `json:"system_name"`
-		}
-		if err := json.Unmarshal(entityRaw, &entity); err != nil {
-			continue
-		}
-		if entity.SystemName == systemName {
-			return entity.ID, true
 		}
 	}
 	return 0, false
