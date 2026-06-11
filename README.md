@@ -189,3 +189,7 @@ GitHub Actions runs tests, builds `threescale-export`, `threescale-seed`, and `t
 |------|-------------|
 | **[docs/SEED.md](docs/SEED.md)** | Load fixtures into a lab tenant to validate export |
 | **[docs/VISUALIZE.md](docs/VISUALIZE.md)** | Generate a Markdown report from an export |
+
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE).

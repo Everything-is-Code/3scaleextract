@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/fmeneses/3scaleextract/internal/admin"
-	"github.com/fmeneses/3scaleextract/internal/export"
+	"github.com/Everything-is-Code/3scaleextract/internal/admin"
+	"github.com/Everything-is-Code/3scaleextract/internal/export"
 )
 
 func TestIntegrationExport(t *testing.T) {

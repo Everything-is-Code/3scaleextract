@@ -1,7 +1,7 @@
 package visualize
 
 import (
-	"github.com/fmeneses/3scaleextract/internal/output"
+	"github.com/Everything-is-Code/3scaleextract/internal/output"
 )
 
 // Tenant is the normalized in-memory view of an export directory.
