@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   test:
@@ -21,8 +22,22 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Test
-        run: go test ./...
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.62.2
+
+      - name: Test with coverage
+        run: go test -coverprofile=coverage.out ./...
+
+      - name: Coverage summary
+        run: go tool cover -func=coverage.out
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: coverage
+          path: coverage.out
 
       - name: Build export CLI
         run: go build -o /dev/null ./cmd/threescale-export
