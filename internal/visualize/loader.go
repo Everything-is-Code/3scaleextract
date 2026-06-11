@@ -186,6 +186,7 @@ func loadProduct(productsDir, systemName string) (Product, error) {
 	}); err != nil {
 		return Product{}, err
 	}
+	resolveProductAuthType(&product, filepath.Join(productsDir, systemName+".yaml"))
 	if product.AuthType == "oidc" && product.OIDC == nil {
 		if _, err := os.Stat(oidcPath); os.IsNotExist(err) {
 			product.MissingFiles = append(product.MissingFiles, "oidc_configuration.json")
@@ -234,17 +235,31 @@ func readOptionalJSON(path string, fn func([]byte) error) error {
 func parseProxy(data []byte, product *Product) error {
 	var envelope struct {
 		Proxy struct {
-			ServiceID          int    `json:"service_id"`
-			AuthType           string `json:"auth_type"`
-			StagingEndpoint    string `json:"staging_endpoint"`
-			ProductionEndpoint string `json:"endpoint"`
+			ServiceID          int             `json:"service_id"`
+			AuthType           string          `json:"auth_type"`
+			AuthUserKey        string          `json:"auth_user_key"`
+			AuthAppID          string          `json:"auth_app_id"`
+			AuthAppKey         string          `json:"auth_app_key"`
+			OIDCIssuerType     string          `json:"oidc_issuer_type"`
+			OIDCIssuerEndpoint string          `json:"oidc_issuer_endpoint"`
+			PoliciesConfig     json.RawMessage `json:"policies_config"`
+			StagingEndpoint    string          `json:"staging_endpoint"`
+			ProductionEndpoint string          `json:"endpoint"`
 		} `json:"proxy"`
 	}
 	if err := json.Unmarshal(data, &envelope); err != nil {
 		return err
 	}
 	product.ServiceID = envelope.Proxy.ServiceID
-	product.AuthType = envelope.Proxy.AuthType
+	product.AuthType = inferAuthTypeFromProxy(
+		envelope.Proxy.AuthType,
+		envelope.Proxy.AuthUserKey,
+		envelope.Proxy.AuthAppID,
+		envelope.Proxy.AuthAppKey,
+		envelope.Proxy.OIDCIssuerType,
+		envelope.Proxy.OIDCIssuerEndpoint,
+		envelope.Proxy.PoliciesConfig,
+	)
 	product.StagingEndpoint = envelope.Proxy.StagingEndpoint
 	product.ProductionEndpoint = envelope.Proxy.ProductionEndpoint
 	return nil

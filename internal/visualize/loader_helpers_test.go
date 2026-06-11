@@ -92,7 +92,8 @@ func TestAuthLabel(t *testing.T) {
 		"app_id_and_app_key":   "App ID + App Key",
 		"oidc":                 "OIDC",
 		"":                     "unknown",
-		"custom_auth":          "custom_auth",
+		"user_key":              "API Key",
+		"userkey":               "API Key",
 	}
 	for in, want := range cases {
 		if got := authLabel(in); got != want {
