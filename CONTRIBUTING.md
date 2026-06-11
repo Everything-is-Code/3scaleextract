@@ -17,4 +17,6 @@ go test ./...
 go build -o bin/threescale-export ./cmd/threescale-export
 ```
 
+When adding or updating tests, align with [docs/TEST_CASES.md](docs/TEST_CASES.md) and update the catalog if behavior or coverage changes.
+
 See [README.md](README.md) for export prerequisites and [docs/SEED.md](docs/SEED.md) for lab fixtures.
