@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fmeneses/3scaleextract/internal/version"
-	"github.com/fmeneses/3scaleextract/internal/visualize"
+	"github.com/Everything-is-Code/3scaleextract/internal/version"
+	"github.com/Everything-is-Code/3scaleextract/internal/visualize"
 	"github.com/spf13/cobra"
 )
 

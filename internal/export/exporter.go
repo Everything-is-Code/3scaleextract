@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fmeneses/3scaleextract/internal/admin"
-	"github.com/fmeneses/3scaleextract/internal/output"
+	"github.com/Everything-is-Code/3scaleextract/internal/admin"
+	"github.com/Everything-is-Code/3scaleextract/internal/output"
 )
 
 type Options struct {

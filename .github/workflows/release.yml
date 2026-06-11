@@ -32,7 +32,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          ldflags="-s -w -X github.com/fmeneses/3scaleextract/internal/version.Version=${VERSION}"
+          ldflags="-s -w -X github.com/Everything-is-Code/3scaleextract/internal/version.Version=${VERSION}"
 
           for bin in threescale-export threescale-seed threescale-visualize; do
             CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
