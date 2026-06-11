@@ -56,6 +56,13 @@ func renderIndex(t *Tenant, outDir string) string {
 	if t.Manifest.Incomplete {
 		b.WriteString("> **Warning:** Export marked incomplete — some data may be missing.\n\n")
 	}
+	if len(t.Manifest.Warnings) > 0 {
+		b.WriteString("## Export warnings\n\n")
+		for _, warning := range t.Manifest.Warnings {
+			b.WriteString(fmt.Sprintf("- %s\n", mdCell(warning)))
+		}
+		b.WriteString("\n")
+	}
 
 	b.WriteString("## Overview\n\n")
 	b.WriteString("| Field | Value |\n")

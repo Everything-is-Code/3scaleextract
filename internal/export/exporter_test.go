@@ -230,3 +230,49 @@ func TestAppendYAMLNewline(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestExportRecordsWarningsOnSkippedSidecars(t *testing.T) {
+	dir := t.TempDir()
+	client := &mockClient{
+		responses: map[string]any{
+			"/services": serviceListResponse{
+				Services: []serviceEntry{{Service: serviceRef{ID: 10, SystemName: "payments"}}},
+			},
+			"/backend_apis": backendListResponse{},
+			"/policies":     map[string]any{},
+			"/services/10/proxy": map[string]any{
+				"proxy": map[string]any{"auth_type": "oidc"},
+			},
+			"/services/10/proxy/policies":      map[string]any{"policies": []any{}},
+			"/services/10/application_plans":   map[string]any{"plans": []any{}},
+			"/services/10/backend_usages":      map[string]any{"backend_usages": []any{}},
+			"/services/10/metrics":             map[string]any{"metrics": []any{}},
+		},
+	}
+	toolbox := &mockToolbox{outputs: map[string][]byte{"payments": []byte("apiVersion: v1\n")}}
+
+	svc := NewService(client, toolbox)
+	manifest, err := svc.Export(context.Background(), Options{
+		AdminURL: "https://tenant.example.com",
+		Token:    "tok",
+		OutDir:   dir,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !manifest.Incomplete {
+		t.Fatal("expected incomplete manifest")
+	}
+	if len(manifest.Warnings) != 1 {
+		t.Fatalf("Warnings = %#v, want 1 entry", manifest.Warnings)
+	}
+	if !strings.Contains(manifest.Warnings[0], "oidc_configuration.json") {
+		t.Fatalf("warning = %q", manifest.Warnings[0])
+	}
+	if _, err := os.Stat(filepath.Join(dir, "products", "payments", "proxy.json")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "products", "payments", "oidc_configuration.json")); !os.IsNotExist(err) {
+		t.Fatalf("oidc_configuration.json should be absent: %v", err)
+	}
+}
