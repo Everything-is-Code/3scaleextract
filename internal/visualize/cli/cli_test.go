@@ -3,6 +3,7 @@ package cli
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -23,5 +24,21 @@ func TestVisualizeExportMinimalFixture(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(out, "backends.md")); err != nil {
 		t.Fatalf("missing backends.md: %v", err)
+	}
+}
+
+func TestVisualizeCanvasFlag(t *testing.T) {
+	fixture := filepath.Join("..", "testdata", "export-minimal")
+	canvas := filepath.Join(t.TempDir(), "topology.canvas.tsx")
+	if got := execute([]string{fixture, "--canvas", canvas}); got != 0 {
+		t.Fatalf("execute(canvas) = %d, want 0", got)
+	}
+	content, err := os.ReadFile(canvas)
+	if err != nil {
+		t.Fatalf("read canvas: %v", err)
+	}
+	text := string(content)
+	if !strings.Contains(text, "TopologyCanvas") || !strings.Contains(text, "seed_alpha") || !strings.Contains(text, "cursor/canvas") {
+		t.Fatalf("unexpected canvas content")
 	}
 }

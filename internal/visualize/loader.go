@@ -167,6 +167,14 @@ func loadProduct(productsDir, systemName string) (Product, error) {
 	}); err != nil {
 		return Product{}, err
 	}
+	if len(product.Policies) == 0 {
+		if err := readOptionalJSON(filepath.Join(productDir, "proxy.json"), func(data []byte) error {
+			product.Policies = policyNamesFromProxyFile(data)
+			return nil
+		}); err != nil {
+			return Product{}, err
+		}
+	}
 	if err := readOptionalJSON(filepath.Join(productDir, "backend_usages.json"), func(data []byte) error {
 		product.BackendUsages = parseBackendUsages(data)
 		return nil
@@ -264,6 +272,43 @@ func parseProxy(data []byte, product *Product) error {
 	product.StagingEndpoint = envelope.Proxy.StagingEndpoint
 	product.ProductionEndpoint = envelope.Proxy.ProductionEndpoint
 	return nil
+}
+
+func policyNamesFromProxyFile(data []byte) []Policy {
+	var envelope struct {
+		Proxy struct {
+			PoliciesConfig json.RawMessage `json:"policies_config"`
+		} `json:"proxy"`
+	}
+	if err := json.Unmarshal(data, &envelope); err != nil {
+		return nil
+	}
+	return policyNamesFromConfig(envelope.Proxy.PoliciesConfig)
+}
+
+func policyNamesFromConfig(raw json.RawMessage) []Policy {
+	if len(raw) == 0 {
+		return nil
+	}
+	var policies []struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(raw, &policies); err != nil {
+		var encoded string
+		if json.Unmarshal(raw, &encoded) != nil {
+			return nil
+		}
+		if err := json.Unmarshal([]byte(encoded), &policies); err != nil {
+			return nil
+		}
+	}
+	out := make([]Policy, 0, len(policies))
+	for _, policy := range policies {
+		if policy.Name != "" {
+			out = append(out, Policy{Name: policy.Name})
+		}
+	}
+	return out
 }
 
 func parsePolicies(data []byte) []Policy {

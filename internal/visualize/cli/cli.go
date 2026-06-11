@@ -11,6 +11,7 @@ import (
 
 func NewRoot() *cobra.Command {
 	outputDir := "./report"
+	canvasPath := ""
 
 	cmd := &cobra.Command{
 		Use:   "threescale-visualize [export-dir]",
@@ -18,21 +19,28 @@ func NewRoot() *cobra.Command {
 		Long: `Reads an export directory produced by threescale-export (schema v1.0)
 and writes a multi-file Markdown bundle for migration review.
 
-See docs/VISUALIZE.md for usage and report layout.`,
+Optionally writes a Cursor IDE topology canvas (.canvas.tsx) for interactive
+exploration. See docs/VISUALIZE.md for usage and report layout.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
-			return RunVisualize(args[0], outputDir)
+			return RunVisualize(args[0], outputDir, canvasPath)
 		},
 	}
 	cmd.Flags().StringVarP(&outputDir, "output", "o", "./report", "report output directory")
+	cmd.Flags().StringVar(&canvasPath, "canvas", "", "write Cursor IDE topology canvas (.canvas.tsx)")
 	cmd.Version = version.Version
 	return cmd
 }
 
-func RunVisualize(exportDir, outputDir string) error {
+func RunVisualize(exportDir, outputDir, canvasPath string) error {
 	tenant, err := visualize.LoadExport(exportDir)
 	if err != nil {
 		return err
+	}
+	if canvasPath != "" {
+		if err := visualize.WriteCanvasTSX(tenant, canvasPath); err != nil {
+			return fmt.Errorf("write canvas: %w", err)
+		}
 	}
 	return visualize.WriteReport(tenant, outputDir)
 }
