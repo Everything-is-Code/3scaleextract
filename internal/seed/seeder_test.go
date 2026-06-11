@@ -446,3 +446,142 @@ func TestHTTPErrorService(t *testing.T) {
 		t.Fatalf("Run error = %v", runErr)
 	}
 }
+
+func TestConfigurePolicies(t *testing.T) {
+	const (
+		serviceID = 101
+		planID    = 201
+		accountID = 42
+	)
+	mock := newSeedMock()
+	mockProductHappyPath(mock, serviceID, planID)
+
+	product := minimalAPIKeyProduct()
+	product.PolicyNames = []string{"cors", "ip_check"}
+
+	s := NewSeeder(mock, Options{})
+	result := resultWithBackend("test_backend", 10)
+	if err := s.seedProduct(context.Background(), product, result, accountID); err != nil {
+		t.Fatal(err)
+	}
+	if !mock.hasPutPath("/proxy/policies") {
+		t.Fatal("expected PUT to proxy/policies")
+	}
+}
+
+func TestEnsurePlanDuplicateFindsExisting(t *testing.T) {
+	const serviceID = 101
+	mock := newSeedMock()
+	plansPath := fmt.Sprintf("/services/%d/application_plans", serviceID)
+	mock.postHandlers[plansPath] = func(string, url.Values, any) error {
+		return fmt.Errorf("%w: HTTP 422 has already been taken", admin.ErrUnrecoverable)
+	}
+	mock.getResponses[plansPath] = map[string]any{
+		"plans": []map[string]any{
+			{"application_plan": map[string]any{"id": 999, "system_name": "basic"}},
+		},
+	}
+
+	s := NewSeeder(mock, Options{})
+	id, err := s.ensurePlan(context.Background(), serviceID, PlanFixture{SystemName: "basic", Name: "Basic"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != 999 {
+		t.Fatalf("plan id = %d", id)
+	}
+}
+
+func TestCreateLimitAndPricingRules(t *testing.T) {
+	const (
+		serviceID = 101
+		planID    = 201
+		accountID = 42
+	)
+	mock := newSeedMock()
+	mockProductHappyPath(mock, serviceID, planID)
+
+	var limitPosts, pricingPosts int
+	mock.defaultPost = func(path string, form url.Values, dst any) error {
+		if strings.Contains(path, "/limits") {
+			limitPosts++
+			if form.Get("limit[value]") != "1000" {
+				t.Fatalf("limit value = %q", form.Get("limit[value]"))
+			}
+			return nil
+		}
+		if strings.Contains(path, "/pricing_rules") {
+			pricingPosts++
+			return nil
+		}
+		switch {
+		case path == "/services":
+			return fillJSON(dst, map[string]any{"service": map[string]any{"id": serviceID}})
+		case strings.HasSuffix(path, "/application_plans"):
+			return fillJSON(dst, map[string]any{"application_plan": map[string]any{"id": planID}})
+		case strings.HasSuffix(path, "/applications"):
+			return fillJSON(dst, map[string]any{"application": map[string]any{"id": 501, "name": "test-app"}})
+		default:
+			return nil
+		}
+	}
+
+	product := minimalAPIKeyProduct()
+	product.Plans[0].LimitValue = 1000
+	product.Plans[0].PriceRules = 2
+
+	s := NewSeeder(mock, Options{})
+	result := resultWithBackend("test_backend", 10)
+	if err := s.seedProduct(context.Background(), product, result, accountID); err != nil {
+		t.Fatal(err)
+	}
+	if limitPosts != 1 {
+		t.Fatalf("limit POSTs = %d", limitPosts)
+	}
+	if pricingPosts != 2 {
+		t.Fatalf("pricing rule POSTs = %d", pricingPosts)
+	}
+}
+
+func TestFindPlanID(t *testing.T) {
+	const serviceID = 55
+	mock := newSeedMock()
+	mock.getResponses[fmt.Sprintf("/services/%d/application_plans", serviceID)] = map[string]any{
+		"plans": []map[string]any{
+			{"application_plan": map[string]any{"id": 42, "system_name": "pro"}},
+		},
+	}
+	s := NewSeeder(mock, Options{})
+	id, ok := s.findPlanID(context.Background(), serviceID, "pro")
+	if !ok || id != 42 {
+		t.Fatalf("findPlanID = (%d, %v)", id, ok)
+	}
+}
+
+func TestFindAccountByUsername(t *testing.T) {
+	mock := newSeedMock()
+	mock.getResponses["/accounts"] = map[string]any{
+		"accounts": []map[string]any{
+			{"account": map[string]any{"id": 99, "username": "demo-user", "org_name": "Other Org"}},
+		},
+	}
+	s := NewSeeder(mock, Options{})
+	id, ok := s.findAccountByUsername(context.Background(), "demo-user")
+	if !ok || id != 99 {
+		t.Fatalf("findAccountByUsername = (%d, %v)", id, ok)
+	}
+}
+
+func TestFindAccountByOrgNameFallback(t *testing.T) {
+	mock := newSeedMock()
+	mock.getResponses["/accounts"] = map[string]any{
+		"accounts": []map[string]any{
+			{"account": map[string]any{"id": 77, "username": "other", "org_name": "Seed Demo Organization"}},
+		},
+	}
+	s := NewSeeder(mock, Options{})
+	id, ok := s.findAccountByUsername(context.Background(), "missing-user")
+	if !ok || id != 77 {
+		t.Fatalf("findAccountByUsername org fallback = (%d, %v)", id, ok)
+	}
+}
