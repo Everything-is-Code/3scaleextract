@@ -1,0 +1,50 @@
+name: Integration
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Check required secrets
+        id: gate
+        env:
+          THREESCALE_ADMIN_URL: ${{ secrets.THREESCALE_ADMIN_URL }}
+          THREESCALE_ACCESS_TOKEN: ${{ secrets.THREESCALE_ACCESS_TOKEN }}
+          THREESCALE_OUTPUT_DIR: ${{ secrets.THREESCALE_OUTPUT_DIR }}
+        run: |
+          if [ -z "$THREESCALE_ADMIN_URL" ] || [ -z "$THREESCALE_ACCESS_TOKEN" ] || [ -z "$THREESCALE_OUTPUT_DIR" ]; then
+            echo "run_tests=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_tests=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip integration tests
+        if: steps.gate.outputs.run_tests != 'true'
+        run: |
+          echo "Skipping integration tests: configure THREESCALE_ADMIN_URL, THREESCALE_ACCESS_TOKEN, and THREESCALE_OUTPUT_DIR repository secrets."
+
+      - name: Integration tests
+        if: steps.gate.outputs.run_tests == 'true'
+        env:
+          THREESCALE_ADMIN_URL: ${{ secrets.THREESCALE_ADMIN_URL }}
+          THREESCALE_ACCESS_TOKEN: ${{ secrets.THREESCALE_ACCESS_TOKEN }}
+          THREESCALE_OUTPUT_DIR: ${{ secrets.THREESCALE_OUTPUT_DIR }}
+          THREESCALE_TOOLBOX_RUNTIME: docker
+          THREESCALE_TOOLBOX_IMAGE: ${{ secrets.THREESCALE_TOOLBOX_IMAGE }}
+          THREESCALE_TOOLBOX_TLS_CERT: ${{ secrets.THREESCALE_TOOLBOX_TLS_CERT }}
+          THREESCALE_INSECURE_TLS: ${{ secrets.THREESCALE_INSECURE_TLS }}
+        run: go test -v -tags=integration ./internal/export/...
