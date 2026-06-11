@@ -107,7 +107,7 @@ chmod +x threescale-visualize
 ./threescale-visualize ./export -o ./report
 ```
 
-See **[docs/VISUALIZE.md](docs/VISUALIZE.md)** for report layout.
+See **[docs/VISUALIZE.md](docs/VISUALIZE.md)** for report layout and optional Cursor topology canvas.
 
 ---
 

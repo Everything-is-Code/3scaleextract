@@ -18,7 +18,7 @@ func TestInferAuthTypeFromProxyLegacyFields(t *testing.T) {
 	}{
 		{name: "api key booleans", userKey: "true", appID: "false", want: "api_key"},
 		{name: "app id booleans", userKey: "false", appID: "true", appKey: "app_key", want: "app_id_and_app_key"},
-		{name: "copec param names", userKey: "user_key", appID: "app_id", appKey: "app_key", want: "app_id_and_app_key"},
+		{name: "legacy param names", userKey: "user_key", appID: "app_id", appKey: "app_key", want: "app_id_and_app_key"},
 		{name: "oidc issuer", oidcURL: "https://sso.example.com/realm/demo", want: "oidc"},
 		{name: "explicit auth type", userKey: "true", appID: "false", want: "api_key"},
 	}
@@ -97,7 +97,7 @@ items:
 	}
 }
 
-func TestLoadExportCopecStyleProxy(t *testing.T) {
+func TestLoadExportLegacyProxyAuthFields(t *testing.T) {
 	dir := t.TempDir()
 	writeMinimalManifest(t, dir, false)
 	writeJSON(t, filepath.Join(dir, "backends", "billing.json"), map[string]any{
