@@ -144,6 +144,8 @@ go test ./...
 go test -tags=integration ./internal/export/...   # live tenant (THREESCALE_*)
 ```
 
+See [docs/TEST_CASES.md](docs/TEST_CASES.md) for the full catalog of user-journey test cases and automation status.
+
 #### Integration CI
 
 A separate GitHub Actions workflow (`.github/workflows/integration.yml`) runs the live export integration test on demand or on a weekly schedule. It does **not** run on pull requests; PR CI stays offline-only.
