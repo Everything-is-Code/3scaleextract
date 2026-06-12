@@ -121,6 +121,9 @@ func (s *Service) Export(ctx context.Context, opts Options) (*output.Manifest, e
 		if err := RedactDirectory(writer.Root()); err != nil {
 			return manifest, err
 		}
+		if err := VerifyNoCleartextSecrets(writer.Root()); err != nil {
+			return manifest, err
+		}
 	}
 
 	if err := writer.WriteManifest(manifest); err != nil {
