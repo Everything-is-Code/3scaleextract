@@ -62,7 +62,7 @@ func BindExportFlags(fs *pflag.FlagSet, cfg *ExportConfig) {
 	BindAuthFlags(fs, &cfg.AuthConfig)
 	fs.StringVar(&cfg.OutDir, "output", cfg.OutDir, "export output directory")
 	fs.BoolVar(&cfg.IncludeApplications, "include-applications", cfg.IncludeApplications, "export applications and linked accounts")
-	fs.BoolVar(&cfg.RedactSecrets, "redact-secrets", cfg.RedactSecrets, "mask API keys and OIDC secrets in output")
+	fs.BoolVar(&cfg.RedactSecrets, "redact-secrets", cfg.RedactSecrets, "mask sensitive keys in JSON/YAML output (secrets to ***REDACTED***, issuer URLs strip embedded credentials; export fails if cleartext remains)")
 	fs.BoolVar(&cfg.Strict, "strict", cfg.Strict, "fail export if any product sidecar JSON cannot be fetched")
 	fs.IntVar(&cfg.PerPage, "per-page", cfg.PerPage, "Admin API page size (max 500)")
 	fs.IntVar(&cfg.MaxConcurrent, "concurrency", cfg.MaxConcurrent, "max concurrent Admin API requests")

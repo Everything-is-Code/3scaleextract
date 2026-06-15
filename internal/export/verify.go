@@ -105,3 +105,32 @@ func ListExportPaths(root string) ([]string, error) {
 	sort.Strings(paths)
 	return paths, nil
 }
+
+// VerifyNoCleartextSecrets scans JSON and YAML artifacts under root for residual
+// sensitive values aligned with the redaction contract. Returns a path-qualified
+// error when cleartext is detected.
+func VerifyNoCleartextSecrets(root string) error {
+	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		switch strings.ToLower(filepath.Ext(path)) {
+		case ".json", ".yaml", ".yml":
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			if ContainsCleartextSecret(data) {
+				rel, err := filepath.Rel(root, path)
+				if err != nil {
+					return err
+				}
+				return fmt.Errorf("cleartext secret in %s", filepath.ToSlash(rel))
+			}
+		}
+		return nil
+	})
+}

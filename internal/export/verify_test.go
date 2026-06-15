@@ -123,3 +123,31 @@ func defaultScopeMockClient() *mockClient {
 		},
 	}
 }
+
+func TestVerifyNoCleartextSecretsClean(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "clean.json"), []byte(`{"client_secret":"***REDACTED***"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifyNoCleartextSecrets(dir); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestVerifyNoCleartextSecretsFailsWithPath(t *testing.T) {
+	dir := t.TempDir()
+	rel := filepath.Join("products", "api", "proxy.json")
+	if err := os.MkdirAll(filepath.Join(dir, "products", "api"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, rel), []byte(`{"proxy":{"client_secret":"not-redacted"}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := VerifyNoCleartextSecrets(dir)
+	if err == nil {
+		t.Fatal("expected cleartext gate error")
+	}
+	if !strings.Contains(err.Error(), "products/api/proxy.json") {
+		t.Fatalf("error = %v, want path-qualified message", err)
+	}
+}

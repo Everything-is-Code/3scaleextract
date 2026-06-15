@@ -102,22 +102,36 @@ Automation references are verified against the repository at the time of writing
 |-------|-------|
 | Priority | P0 |
 | CLI | `threescale-export` |
-| Automation | `TestExportRedactSecrets` (`internal/export/exporter_test.go`), `TestRedactJSONRemovesCleartextSecrets`, `TestRedactYAMLRemovesCleartextSecrets`, `TestRedactDirectory` (`internal/export/redact_test.go`) |
+| Automation | `TestExportRedactSecrets`, `TestExportWithoutRedactPreservesSecrets`, `TestExportRedactSecretsVerifyGateFailsOnResidual` (`internal/export/exporter_test.go`); `TestVerifyNoCleartextSecretsClean`, `TestVerifyNoCleartextSecretsFailsWithPath` (`internal/export/verify_test.go`); `TestRedactExtendedSensitiveKeys`, `TestRedactIssuerStripsUserinfoJSON`, `TestRedactPreservesAuthProxyFlags`, `TestContainsCleartextSecretYAMLIssuerUserinfo` (`internal/export/redact_test.go`) |
 
 **Preconditions**
 
 - Same as TC-EXP-001
-- Export includes credentials (API keys, OIDC secrets, etc.)
+- Export includes credentials (API keys, OIDC secrets, application identifiers, issuer URLs with embedded credentials, etc.)
 
 **Steps**
 
 1. Run `threescale-export --output ./export --redact-secrets --include-applications`
-2. Search output for cleartext secrets
+2. Search output for cleartext secrets and issuer URL userinfo
 
 **Expected results**
 
-- Sensitive values replaced with `***REDACTED***` in JSON and YAML artifacts
-- Export completes without error
+- Core and extended sensitive keys (`provider_verification_key`, `client_id`, `app_id`, plus existing secret keys) replaced with `***REDACTED***` in JSON and YAML artifacts
+- `issuer_endpoint` and `oidc_issuer_endpoint` have URL userinfo stripped; host and path remain visible
+- `auth_user_key`, `auth_app_id`, and `auth_app_key` are unchanged (auth-mode flags, not secrets)
+- Post-redaction cleartext scan passes; export completes without error
+- If cleartext remains after redaction, export fails with a path-qualified error (e.g. `cleartext secret in products/api/proxy.json`)
+
+**Opt-in default (no flag)**
+
+| Field | Value |
+|-------|-------|
+| Automation | `TestExportWithoutRedactPreservesSecrets` (`internal/export/exporter_test.go`) |
+
+**Expected results (without `--redact-secrets`)**
+
+- Credential values remain cleartext in JSON and YAML artifacts
+- No `***REDACTED***` markers in output
 
 ---
 

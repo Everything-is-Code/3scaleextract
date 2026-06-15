@@ -81,7 +81,7 @@ The hybrid export combines:
 | `--token` | Personal Access Token |
 | `--output` | Output directory (default `./export`) |
 | `--include-applications` | Include applications and accounts (paginated) |
-| `--redact-secrets` | Mask API keys and OIDC secrets |
+| `--redact-secrets` | Opt-in: mask sensitive keys in JSON/YAML artifacts (see [Redaction](#redaction) below) |
 | `--per-page` | Admin API page size (max 500) |
 | `--concurrency` | Concurrent requests (default 4) |
 | `--insecure` | Skip TLS verification on Admin API |
@@ -97,6 +97,20 @@ Self-signed TLS (Admin Portal or toolbox):
   --insecure \
   --output ./export
 ```
+
+### Redaction
+
+`--redact-secrets` is **opt-in** (default off). When set, every `.json`, `.yaml`, and `.yml` file under the export root is processed before `manifest.json` is written.
+
+**Fully redacted keys** (value becomes `***REDACTED***`):
+
+`access_token`, `api_key`, `app_id`, `app_key`, `client_id`, `client_secret`, `provider_key`, `provider_verification_key`, `secret`, `user_key`
+
+**Issuer URL stripping** (`issuer_endpoint`, `oidc_issuer_endpoint`): embedded credentials are removed (`https://user:pass@host/path` → `https://host/path`); host, path, and query stay visible.
+
+**Preserved auth-mode flags** (not secrets): `auth_user_key`, `auth_app_id`, `auth_app_key`
+
+After redaction, a cleartext scan runs over the same artifacts. If any sensitive value or issuer userinfo remains, **export fails** with a path-qualified error.
 
 ### Visualize the export
 

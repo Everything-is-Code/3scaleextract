@@ -3,6 +3,7 @@ package export
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -10,16 +11,26 @@ import (
 )
 
 var sensitiveJSONKeys = map[string]struct{}{
-	"access_token":  {},
-	"client_secret": {},
-	"secret":        {},
-	"api_key":       {},
-	"user_key":      {},
-	"app_key":       {},
-	"provider_key":  {},
+	"access_token":              {},
+	"client_secret":               {},
+	"secret":                      {},
+	"api_key":                     {},
+	"user_key":                    {},
+	"app_key":                     {},
+	"provider_key":                {},
+	"provider_verification_key":   {},
+	"client_id":                   {},
+	"app_id":                      {},
 }
 
-var yamlSecretPattern = regexp.MustCompile(`(?m)^(\s*(?:access_token|client_secret|secret|api_key|user_key|app_key|provider_key)\s*:\s*).+$`)
+var issuerJSONKeys = map[string]struct{}{
+	"issuer_endpoint":      {},
+	"oidc_issuer_endpoint": {},
+}
+
+var yamlSecretPattern = regexp.MustCompile(`(?m)^(\s*(?:access_token|client_secret|secret|api_key|user_key|app_key|provider_key|provider_verification_key|client_id|app_id)\s*:\s*).+$`)
+
+var yamlIssuerPattern = regexp.MustCompile(`(?m)^(\s*(?:issuer_endpoint|oidc_issuer_endpoint)\s*:\s*)(.+)$`)
 
 const redactedValue = `"***REDACTED***"`
 
@@ -65,16 +76,34 @@ func redactYAMLFile(path string) error {
 	if err != nil {
 		return err
 	}
-	out := yamlSecretPattern.ReplaceAllString(string(data), `${1}`+redactedValue)
+	out := redactYAMLContent(string(data))
 	return os.WriteFile(path, []byte(out), 0o644)
+}
+
+func redactYAMLContent(content string) string {
+	content = yamlSecretPattern.ReplaceAllString(content, `${1}`+redactedValue)
+	return yamlIssuerPattern.ReplaceAllStringFunc(content, func(match string) string {
+		sub := yamlIssuerPattern.FindStringSubmatch(match)
+		if len(sub) < 3 {
+			return match
+		}
+		return sub[1] + stripURLUserinfo(strings.TrimSpace(sub[2]))
+	})
 }
 
 func redactJSONValue(v any) {
 	switch node := v.(type) {
 	case map[string]any:
 		for k, val := range node {
-			if _, ok := sensitiveJSONKeys[strings.ToLower(k)]; ok {
+			lowerK := strings.ToLower(k)
+			if _, ok := sensitiveJSONKeys[lowerK]; ok {
 				node[k] = "***REDACTED***"
+				continue
+			}
+			if _, ok := issuerJSONKeys[lowerK]; ok {
+				if s, ok := val.(string); ok {
+					node[k] = stripURLUserinfo(s)
+				}
 				continue
 			}
 			redactJSONValue(val)
@@ -86,20 +115,70 @@ func redactJSONValue(v any) {
 	}
 }
 
+func stripURLUserinfo(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil || u.User == nil {
+		return raw
+	}
+	u.User = nil
+	return u.String()
+}
+
+func containsIssuerUserinfo(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	return u.User != nil
+}
+
 func ContainsCleartextSecret(data []byte) bool {
 	var root any
 	if err := json.Unmarshal(data, &root); err != nil {
-		return yamlSecretPattern.Match(data)
+		return yamlHasCleartextSecret(data)
 	}
 	return jsonHasCleartextSecret(root)
+}
+
+func yamlHasCleartextSecret(data []byte) bool {
+	for _, line := range strings.Split(string(data), "\n") {
+		if sub := yamlSecretPattern.FindStringSubmatch(line); len(sub) == 2 {
+			val := yamlValueFromLine(sub[0])
+			if val != "" && val != "***REDACTED***" {
+				return true
+			}
+		}
+		if sub := yamlIssuerPattern.FindStringSubmatch(line); len(sub) == 3 {
+			val := strings.TrimSpace(sub[2])
+			val = strings.Trim(val, `"'`)
+			if containsIssuerUserinfo(val) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func yamlValueFromLine(line string) string {
+	parts := strings.SplitN(line, ":", 2)
+	if len(parts) < 2 {
+		return ""
+	}
+	return strings.Trim(strings.TrimSpace(parts[1]), `"'`)
 }
 
 func jsonHasCleartextSecret(v any) bool {
 	switch node := v.(type) {
 	case map[string]any:
 		for k, val := range node {
-			if _, ok := sensitiveJSONKeys[strings.ToLower(k)]; ok {
+			lowerK := strings.ToLower(k)
+			if _, ok := sensitiveJSONKeys[lowerK]; ok {
 				if s, ok := val.(string); ok && s != "" && s != "***REDACTED***" {
+					return true
+				}
+			}
+			if _, ok := issuerJSONKeys[lowerK]; ok {
+				if s, ok := val.(string); ok && containsIssuerUserinfo(s) {
 					return true
 				}
 			}
@@ -131,7 +210,7 @@ func RedactBytes(ext string, data []byte) ([]byte, error) {
 		}
 		return append(out, '\n'), nil
 	case ".yaml", ".yml":
-		return []byte(yamlSecretPattern.ReplaceAllString(string(data), `${1}`+redactedValue)), nil
+		return []byte(redactYAMLContent(string(data))), nil
 	default:
 		return data, fmt.Errorf("unsupported extension %q", ext)
 	}
