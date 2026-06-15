@@ -65,22 +65,65 @@ jobs:
             dist/export-minimal-1.0.tar.gz
             dist/export-minimal-1.0.tar.gz.sha256
           body: |
+            ## What's new in v${{ steps.version.outputs.tag }}
+
+            ### threescale-visualize
+            - **`--canvas`** — generate an interactive Cursor IDE topology canvas (`.canvas.tsx`) from any export: charts, product→backend graph, sortable product table with policy chains.
+            - Improved auth inference from toolbox YAML and legacy proxy fields.
+            - Parses `backend_usages.json` in both wrapped and top-level array formats.
+
+            ### threescale-export
+            - **Extended `--redact-secrets`** — redacts `provider_verification_key`, `client_id`, `app_id`; strips embedded credentials from OIDC issuer URLs; fails export if cleartext remains after redaction.
+            - **`--strict`** — fail when product sidecars cannot be fetched.
+            - Export manifest warnings for skipped sidecars.
+
+            See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md) and the [README Redaction section](https://github.com/${{ github.repository }}/blob/main/README.md#redaction).
+
+            ---
+
             ## Download (clients)
 
-            1. `threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz`
-            2. `tar xzf threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz`
-            3. `chmod +x threescale-export`
+            ### 1. Export a tenant
 
-            See [README](https://github.com/${{ github.repository }}#run-the-binary) for dependencies (Docker + toolbox image) and environment variables.
+            ```bash
+            tar xzf threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
+            chmod +x threescale-export
+
+            export THREESCALE_ADMIN_URL="https://tenant-admin.example.com"
+            export THREESCALE_ACCESS_TOKEN="your-token"
+
+            ./threescale-export \
+              --output ./export \
+              --include-applications \
+              --redact-secrets
+            ```
+
+            Use `--redact-secrets` when sharing exports outside the tenant team. See [README — Run the binary](https://github.com/${{ github.repository }}#run-the-binary) for Docker/toolbox prerequisites.
+
+            ### 2. Visualize (optional)
+
+            ```bash
+            tar xzf threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
+            chmod +x threescale-visualize
+
+            # Markdown report
+            ./threescale-visualize ./export -o ./report
+
+            # Report + Cursor topology canvas
+            ./threescale-visualize ./export -o ./report --canvas ./topology.canvas.tsx
+            ```
+
+            Copy `topology.canvas.tsx` to `~/.cursor/projects/<workspace>/canvases/` and open it in Cursor. Full guide: [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md).
 
             ## Lab / demo (optional)
 
-            - `threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — see [docs/SEED.md](https://github.com/${{ github.repository }}/blob/main/docs/SEED.md)
-            - `threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — see [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md)
-            - `export-minimal-1.0.tar.gz` — offline export fixture; see [testdata/README.md](https://github.com/${{ github.repository }}/blob/main/testdata/README.md)
+            - `threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — [docs/SEED.md](https://github.com/${{ github.repository }}/blob/main/docs/SEED.md)
+            - `export-minimal-1.0.tar.gz` — offline fixture; [testdata/README.md](https://github.com/${{ github.repository }}/blob/main/testdata/README.md)
+            - Demo canvas: [docs/examples/topology-demo.canvas.tsx](https://github.com/${{ github.repository }}/blob/main/docs/examples/topology-demo.canvas.tsx)
 
             ## Verification
 
             ```bash
             sha256sum -c threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
+            sha256sum -c threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
             ```

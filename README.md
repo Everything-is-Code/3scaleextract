@@ -148,7 +148,7 @@ go build -o bin/threescale-visualize ./cmd/threescale-visualize
 
 ```bash
 bin/threescale-export --output ./export --include-applications --redact-secrets
-bin/threescale-visualize ./export -o ./report
+bin/threescale-visualize ./export -o ./report --canvas ./topology.canvas.tsx
 ```
 
 ### Tests
@@ -222,8 +222,8 @@ export/
 Releases are published when a semver tag is pushed:
 
 ```bash
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 GitHub Actions runs tests, builds `threescale-export`, `threescale-seed`, and `threescale-visualize` for Linux amd64, and publishes `.tar.gz` artifacts with checksums on [Releases](https://github.com/Everything-is-Code/3scaleextract/releases).
