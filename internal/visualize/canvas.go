@@ -23,7 +23,7 @@ func WriteCanvasTSX(tenant *Tenant, outPath string) error {
 		return fmt.Errorf("canvas output path is empty")
 	}
 
-	data := BuildCanvasData(tenant)
+	data := BuildTopologyData(tenant)
 	payload, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("marshal canvas data: %w", err)

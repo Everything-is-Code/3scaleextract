@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/Everything-is-Code/3scaleextract/internal/version"
 	"github.com/Everything-is-Code/3scaleextract/internal/visualize"
@@ -12,6 +13,7 @@ import (
 func NewRoot() *cobra.Command {
 	outputDir := "./report"
 	canvasPath := ""
+	html := false
 
 	cmd := &cobra.Command{
 		Use:   "threescale-visualize [export-dir]",
@@ -19,20 +21,22 @@ func NewRoot() *cobra.Command {
 		Long: `Reads an export directory produced by threescale-export (schema v1.0)
 and writes a multi-file Markdown bundle for migration review.
 
-Optionally writes a Cursor IDE topology canvas (.canvas.tsx) for interactive
-exploration. See docs/VISUALIZE.md for usage and report layout.`,
+Optionally writes a self-contained HTML topology dashboard or a Cursor IDE
+topology canvas (.canvas.tsx) for interactive exploration. See docs/VISUALIZE.md
+for usage and report layout.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
-			return RunVisualize(args[0], outputDir, canvasPath)
+			return RunVisualize(args[0], outputDir, canvasPath, html)
 		},
 	}
 	cmd.Flags().StringVarP(&outputDir, "output", "o", "./report", "report output directory")
 	cmd.Flags().StringVar(&canvasPath, "canvas", "", "write Cursor IDE topology canvas (.canvas.tsx)")
+	cmd.Flags().BoolVar(&html, "html", false, "write self-contained topology dashboard (topology.html)")
 	cmd.Version = version.Version
 	return cmd
 }
 
-func RunVisualize(exportDir, outputDir, canvasPath string) error {
+func RunVisualize(exportDir, outputDir, canvasPath string, html bool) error {
 	tenant, err := visualize.LoadExport(exportDir)
 	if err != nil {
 		return err
@@ -42,7 +46,13 @@ func RunVisualize(exportDir, outputDir, canvasPath string) error {
 			return fmt.Errorf("write canvas: %w", err)
 		}
 	}
-	return visualize.WriteReport(tenant, outputDir)
+	if html {
+		htmlPath := filepath.Join(outputDir, "topology.html")
+		if err := visualize.WriteTopologyHTML(tenant, htmlPath); err != nil {
+			return fmt.Errorf("write html: %w", err)
+		}
+	}
+	return visualize.WriteReport(tenant, outputDir, html)
 }
 
 func Execute() int {
