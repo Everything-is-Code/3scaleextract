@@ -1,0 +1,11 @@
+change: visualize-topology-report
+status: proposed
+phases:
+  explore: done
+  propose: done
+  spec: done
+  design: done
+  tasks: done
+  apply: pending
+  verify: pending
+  archive: pending

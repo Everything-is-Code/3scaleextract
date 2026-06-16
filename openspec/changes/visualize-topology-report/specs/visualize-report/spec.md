@@ -1,0 +1,17 @@
+# Delta for visualize-report
+
+## MODIFIED Requirements
+
+### Requirement: Report bundle layout
+
+The visualizer SHALL write a multi-file Markdown report under the output directory including `index.md`, `backends.md`, `products/{system_name}.md`, optional `applications.md`, and **`products-catalog.md`**.
+
+`index.md` SHALL link to the product catalog and, when `--html` is used, to `topology.html`.
+
+(Previously: index contained overview, auth matrix, and Mermaid graph only; no catalog or HTML link.)
+
+#### Scenario: Report layout after change
+
+- **GIVEN** a valid export
+- **WHEN** visualize runs with `-o ./report`
+- **THEN** `./report/products-catalog.md` is created alongside existing report files
