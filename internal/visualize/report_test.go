@@ -14,12 +14,13 @@ func TestWriteReportBundle(t *testing.T) {
 	}
 
 	dir := t.TempDir()
-	if err := WriteReport(tenant, dir); err != nil {
+	if err := WriteReport(tenant, dir, false); err != nil {
 		t.Fatal(err)
 	}
 
 	for _, path := range []string{
 		"index.md",
+		"products-catalog.md",
 		"backends.md",
 		"products/seed_alpha.md",
 		"products/seed_multi_backend.md",
@@ -35,10 +36,13 @@ func TestWriteReportBundle(t *testing.T) {
 		t.Fatal(err)
 	}
 	indexText := string(index)
-	for _, want := range []string{"API Key", "OIDC", "flowchart LR", "seed_alpha", "shared_payments"} {
+	for _, want := range []string{"API Key", "OIDC", "flowchart LR", "seed_alpha", "shared_payments", "Product catalog", "products-catalog.md"} {
 		if !strings.Contains(indexText, want) {
 			t.Fatalf("index.md missing %q", want)
 		}
+	}
+	if strings.Contains(indexText, "topology.html") {
+		t.Fatal("index should not link topology.html when includeHTMLLink is false")
 	}
 	if !strings.Contains(indexText, `-->|"/payments"|`) && !strings.Contains(indexText, `-->|"/payments"| shared_payments`) {
 		if !strings.Contains(indexText, "/payments") {
@@ -80,7 +84,7 @@ func TestWriteReportSkipsApplicationsWhenNotIncluded(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := t.TempDir()
-	if err := WriteReport(tenant, out); err != nil {
+	if err := WriteReport(tenant, out, false); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(out, "applications.md")); !os.IsNotExist(err) {
@@ -107,7 +111,7 @@ func TestWriteReportRedactionPassthrough(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := t.TempDir()
-	if err := WriteReport(tenant, out); err != nil {
+	if err := WriteReport(tenant, out, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -128,7 +132,7 @@ func TestWriteReportIncompleteBanner(t *testing.T) {
 	tenant.Manifest.Incomplete = true
 
 	out := t.TempDir()
-	if err := WriteReport(tenant, out); err != nil {
+	if err := WriteReport(tenant, out, false); err != nil {
 		t.Fatal(err)
 	}
 	index, err := os.ReadFile(filepath.Join(out, "index.md"))
@@ -151,7 +155,7 @@ func TestWriteReportManifestWarnings(t *testing.T) {
 	}
 
 	out := t.TempDir()
-	if err := WriteReport(tenant, out); err != nil {
+	if err := WriteReport(tenant, out, false); err != nil {
 		t.Fatal(err)
 	}
 	index, err := os.ReadFile(filepath.Join(out, "index.md"))
@@ -168,14 +172,14 @@ func TestWriteReportManifestWarnings(t *testing.T) {
 }
 
 func TestWriteReportValidation(t *testing.T) {
-	if err := WriteReport(nil, t.TempDir()); err == nil {
+	if err := WriteReport(nil, t.TempDir(), false); err == nil {
 		t.Fatal("expected error for nil tenant")
 	}
 	tenant, err := LoadExport(filepath.Join("testdata", "export-minimal"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := WriteReport(tenant, ""); err == nil {
+	if err := WriteReport(tenant, "", false); err == nil {
 		t.Fatal("expected error for empty output dir")
 	}
 }
@@ -186,7 +190,7 @@ func TestWriteReportApplicationsJoin(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := t.TempDir()
-	if err := WriteReport(tenant, out); err != nil {
+	if err := WriteReport(tenant, out, false); err != nil {
 		t.Fatal(err)
 	}
 

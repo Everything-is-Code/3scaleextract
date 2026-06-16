@@ -5,40 +5,40 @@ import (
 	"strings"
 )
 
-// CanvasData is the compact payload embedded in a Cursor topology canvas.
-type CanvasData struct {
-	Manifest  map[string]any     `json:"m"`
-	Cat       map[string]string  `json:"cat"`
-	CatCounts map[string]int     `json:"catCounts"`
-	Backends  []string           `json:"backends"`
-	Products  []CanvasProduct    `json:"products"`
-	Shared    []CanvasShared     `json:"shared"`
+// TopologyData is the compact payload for canvas, HTML, and catalog views.
+type TopologyData struct {
+	Manifest  map[string]any    `json:"m"`
+	Cat       map[string]string `json:"cat"`
+	CatCounts map[string]int    `json:"catCounts"`
+	Backends  []string          `json:"backends"`
+	Products  []TopologyProduct `json:"products"`
+	Shared    []TopologyShared  `json:"shared"`
 }
 
-type CanvasProduct struct {
-	Name       string     `json:"n"`
-	Category   string     `json:"c"`
-	Auth       string     `json:"a"`
-	Edges      [][2]any   `json:"e"`
-	Apps       [][3]string `json:"p,omitempty"`
-	PolicyNames []string  `json:"pol,omitempty"`
+type TopologyProduct struct {
+	Name        string        `json:"n"`
+	Category    string        `json:"c"`
+	Auth        string        `json:"a"`
+	Edges       [][2]any      `json:"e"`
+	Apps        [][3]string   `json:"p,omitempty"`
+	PolicyNames []string      `json:"pol,omitempty"`
 }
 
-type CanvasShared struct {
-	Backend string   `json:"b"`
-	Count   int      `json:"n"`
+type TopologyShared struct {
+	Backend  string   `json:"b"`
+	Count    int      `json:"n"`
 	Products []string `json:"p"`
 }
 
-var canvasCategoryLabels = map[string]string{
+var topologyCategoryLabels = map[string]string{
 	"I": "Integration (-IS)",
 	"B": "Business API",
 	"S": "SAP",
 	"P": "Platform / misc",
 }
 
-// BuildCanvasData converts a loaded tenant export into canvas-ready JSON.
-func BuildCanvasData(tenant *Tenant) CanvasData {
+// BuildTopologyData converts a loaded tenant export into topology JSON.
+func BuildTopologyData(tenant *Tenant) TopologyData {
 	backendNames := make([]string, 0, len(tenant.Backends))
 	backendIndex := map[string]int{}
 	for _, b := range tenant.Backends {
@@ -64,7 +64,7 @@ func BuildCanvasData(tenant *Tenant) CanvasData {
 		})
 	}
 
-	products := make([]CanvasProduct, 0, len(tenant.Products))
+	products := make([]TopologyProduct, 0, len(tenant.Products))
 	for _, p := range tenant.Products {
 		edges := make([][2]any, 0, len(p.BackendUsages))
 		for _, u := range p.BackendUsages {
@@ -84,9 +84,9 @@ func BuildCanvasData(tenant *Tenant) CanvasData {
 			policyNames = append(policyNames, policy.Name)
 		}
 
-		product := CanvasProduct{
+		product := TopologyProduct{
 			Name:        p.SystemName,
-			Category:    canvasCategoryKey(p.SystemName),
+			Category:    topologyCategoryKey(p.SystemName),
 			Auth:        authLabel(p.AuthType),
 			Edges:       edges,
 			PolicyNames: policyNames,
@@ -97,7 +97,7 @@ func BuildCanvasData(tenant *Tenant) CanvasData {
 		products = append(products, product)
 	}
 
-	var shared []CanvasShared
+	var shared []TopologyShared
 	for backend, ps := range refs {
 		if len(ps) < 2 {
 			continue
@@ -111,7 +111,7 @@ func BuildCanvasData(tenant *Tenant) CanvasData {
 		if limit > 6 {
 			limit = 6
 		}
-		shared = append(shared, CanvasShared{
+		shared = append(shared, TopologyShared{
 			Backend:  backend,
 			Count:    len(names),
 			Products: names[:limit],
@@ -143,9 +143,9 @@ func BuildCanvasData(tenant *Tenant) CanvasData {
 		"incomplete":           tenant.Manifest.Incomplete,
 	}
 
-	return CanvasData{
+	return TopologyData{
 		Manifest:  manifest,
-		Cat:       canvasCategoryLabels,
+		Cat:       topologyCategoryLabels,
 		CatCounts: catCounts,
 		Backends:  backendNames,
 		Products:  products,
@@ -153,7 +153,7 @@ func BuildCanvasData(tenant *Tenant) CanvasData {
 	}
 }
 
-func canvasCategoryKey(name string) string {
+func topologyCategoryKey(name string) string {
 	switch {
 	case strings.HasSuffix(name, "-IS") || name == "Industrial-IS-int":
 		return "I"
@@ -164,4 +164,11 @@ func canvasCategoryKey(name string) string {
 	default:
 		return "B"
 	}
+}
+
+func formatPolicyChain(names []string) string {
+	if len(names) == 0 {
+		return "—"
+	}
+	return strings.Join(names, " → ")
 }

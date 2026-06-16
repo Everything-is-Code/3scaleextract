@@ -2,7 +2,7 @@
 
 **Optional** tool that generates a Markdown report from a directory exported by `threescale-export`. Useful for migration reviews without opening JSON/YAML manually.
 
-It can also generate a **Cursor IDE topology canvas** (`.canvas.tsx`) for interactive exploration of products, backends, applications, and policies.
+It can also generate a **self-contained HTML topology dashboard** (`topology.html`) for workshops in any browser, or a **Cursor IDE topology canvas** (`.canvas.tsx`) for interactive exploration of products, backends, applications, and policies.
 
 To export a tenant, use the [main README](../README.md).
 
@@ -27,6 +27,9 @@ Or download `threescale-visualize-v*.*.*-linux-amd64.tar.gz` from [Releases](htt
 # Markdown report (default ./report)
 bin/threescale-visualize ./export -o ./report
 
+# Report + HTML topology dashboard (open topology.html in a browser)
+bin/threescale-visualize ./export -o ./report --html
+
 # Report + Cursor topology canvas
 bin/threescale-visualize ./export -o ./report --canvas ./topology.canvas.tsx
 ```
@@ -34,6 +37,7 @@ bin/threescale-visualize ./export -o ./report --canvas ./topology.canvas.tsx
 | Flag | Description |
 |------|-------------|
 | `-o`, `--output` | Report directory (default `./report`) |
+| `--html` | Write self-contained topology dashboard (`topology.html` in output dir) |
 | `--canvas` | Write a Cursor IDE topology canvas (`.canvas.tsx`) |
 | `--version` | Binary version |
 
@@ -42,6 +46,8 @@ bin/threescale-visualize ./export -o ./report --canvas ./topology.canvas.tsx
 ```
 report/
 ├── index.md              # overview, auth matrix, Mermaid graph
+├── products-catalog.md   # sortable table: auth, backends, apps, policies
+├── topology.html         # only with --html
 ├── backends.md           # backend catalog
 ├── applications.md       # only if export included applications
 └── products/
@@ -49,6 +55,30 @@ report/
 ```
 
 Open `index.md` in GitHub, VS Code, or Cursor to navigate via relative links. Mermaid diagrams render on GitHub and in compatible editors.
+
+## HTML topology dashboard
+
+The HTML dashboard replicates the canvas UX (stats, charts, product→backend graph, sortable product table with policy names) without requiring Cursor. Generate it from the same export directory:
+
+```bash
+bin/threescale-visualize ./export -o ./report --html
+```
+
+Open `report/topology.html` in any modern browser. Chart.js is loaded from a CDN; the file embeds export data inline (no server required).
+
+### Demo HTML (lab fixture)
+
+The repository includes a demo generated from the offline fixture (`seed_alpha`, `seed_multi_backend`):
+
+- [`docs/examples/topology-demo.html`](examples/topology-demo.html)
+
+Regenerate it after template changes:
+
+```bash
+bin/threescale-visualize internal/visualize/testdata/export-minimal \
+  -o docs/examples --html
+mv docs/examples/topology.html docs/examples/topology-demo.html
+```
 
 ## Cursor topology canvas
 
@@ -88,8 +118,8 @@ bin/threescale-seed
 # 2. Export lab tenant
 bin/threescale-export --output ./export --include-applications --redact-secrets
 
-# 3. Generate report and optional canvas
-bin/threescale-visualize ./export -o ./report --canvas ./topology.canvas.tsx
+# 3. Generate report, optional HTML dashboard, and optional canvas
+bin/threescale-visualize ./export -o ./report --html --canvas ./topology.canvas.tsx
 ```
 
 Use `--include-applications` on export when you want subscribed applications in the canvas graph.
@@ -100,4 +130,4 @@ Use `--include-applications` on export when you want subscribed applications in 
 - Does not include `policies/catalog.json` content (global reference, not tenant config)
 - Policy chains are read from `policies.json` when present, otherwise from `proxy.json` (`policies_config`)
 - Redacted secrets (`***REDACTED***`) are shown as-is — not de-redacted
-- Canvas requires Cursor IDE; the Markdown report works everywhere
+- Canvas requires Cursor IDE; the Markdown report and HTML dashboard work everywhere

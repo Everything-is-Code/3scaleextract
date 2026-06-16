@@ -8,13 +8,13 @@ import (
 	"testing"
 )
 
-func TestBuildCanvasDataFromMinimalFixture(t *testing.T) {
+func TestBuildTopologyDataFromMinimalFixture(t *testing.T) {
 	tenant, err := LoadExport(filepath.Join("testdata", "export-minimal"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	data := BuildCanvasData(tenant)
+	data := BuildTopologyData(tenant)
 	if data.Manifest["product_count"] != 2 {
 		t.Fatalf("product_count = %v, want 2", data.Manifest["product_count"])
 	}
@@ -25,27 +25,27 @@ func TestBuildCanvasDataFromMinimalFixture(t *testing.T) {
 		t.Fatalf("backends = %d, want 2", len(data.Backends))
 	}
 
-	var canvasAlpha *CanvasProduct
+	var alpha *TopologyProduct
 	for i := range data.Products {
 		if data.Products[i].Name == "seed_alpha" {
-			canvasAlpha = &data.Products[i]
+			alpha = &data.Products[i]
 			break
 		}
 	}
-	if canvasAlpha == nil {
-		t.Fatal("seed_alpha missing from canvas products")
+	if alpha == nil {
+		t.Fatal("seed_alpha missing from topology products")
 	}
-	if canvasAlpha.Auth != "API Key" {
-		t.Fatalf("auth = %q", canvasAlpha.Auth)
+	if alpha.Auth != "API Key" {
+		t.Fatalf("auth = %q", alpha.Auth)
 	}
-	if len(canvasAlpha.Edges) != 1 {
-		t.Fatalf("edges = %d, want 1", len(canvasAlpha.Edges))
+	if len(alpha.Edges) != 1 {
+		t.Fatalf("edges = %d, want 1", len(alpha.Edges))
 	}
-	if len(canvasAlpha.PolicyNames) != 1 || canvasAlpha.PolicyNames[0] != "cors" {
-		t.Fatalf("policies = %v", canvasAlpha.PolicyNames)
+	if len(alpha.PolicyNames) != 1 || alpha.PolicyNames[0] != "cors" {
+		t.Fatalf("policies = %v", alpha.PolicyNames)
 	}
-	if len(canvasAlpha.Apps) != 1 {
-		t.Fatalf("apps = %d, want 1", len(canvasAlpha.Apps))
+	if len(alpha.Apps) != 1 {
+		t.Fatalf("apps = %d, want 1", len(alpha.Apps))
 	}
 }
 

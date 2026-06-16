@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3scale tenant topology</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f6f6;
+      --card: #fff;
+      --border: #d4d4d4;
+      --border-light: #e8e8e8;
+      --text: #1e1e1e;
+      --text-muted: #616161;
+      --accent: #0078d4;
+      --accent-text: #fff;
+      --row-alt: #fafafa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .page { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 4px; }
+    .subtitle { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 24px; }
+    .stats { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      min-width: 140px;
+    }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted); }
+    .stat-value { font-size: 1.25rem; font-weight: 600; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 12px 16px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .card-body { padding: 16px; }
+    .card-caption { font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; }
+    label { font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
+    input[type="text"], select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font: inherit;
+    }
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+    .controls > div { flex: 1; min-width: 200px; }
+    .meta { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 12px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border-light); }
+    th { background: var(--row-alt); cursor: pointer; user-select: none; white-space: nowrap; }
+    th.num, td.num { text-align: right; }
+    tr:nth-child(even) td { background: var(--row-alt); }
+    .pager { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 12px 0; font-size: 0.875rem; }
+    button {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--card);
+      cursor: pointer;
+      font: inherit;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .shared-item { padding: 12px 0; border-bottom: 1px solid var(--border-light); }
+    .shared-item:last-child { border-bottom: none; }
+    .shared-title { font-weight: 600; }
+    .shared-detail { font-size: 0.8125rem; color: var(--text-muted); }
+    .routes { font-size: 0.8125rem; color: var(--text-muted); margin-top: 12px; }
+    .routes div { margin: 4px 0; }
+    details { margin-bottom: 24px; }
+    summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>3scale tenant — component topology</h1>
+    <p class="subtitle" id="subtitle"></p>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">Products by domain</div>
+        <div class="card-body"><canvas id="pieChart" height="220"></canvas>
+          <p class="card-caption" id="pieCaption"></p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">Most shared backends</div>
+        <div class="card-body"><canvas id="barChart"></canvas>
+          <p class="card-caption">Backends used by more than one API product</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-header">Product ↔ backend relationships</div>
+      <div class="card-body">
+        <div class="controls">
+          <div><label for="filter">Filter products</label><input id="filter" type="text" placeholder="Search by system name…" /></div>
+          <div><label for="productSelect">Selected product</label><select id="productSelect"></select></div>
+        </div>
+        <label><input type="checkbox" id="showApps" /> Show subscribed applications</label>
+        <p class="meta" id="productMeta"></p>
+        <div style="overflow-x:auto"><svg id="graph" style="display:block;min-width:640px"></svg></div>
+        <div id="appList"></div>
+        <div class="routes" id="routes"></div>
+      </div>
+    </div>
+
+    <details open>
+      <summary>Product catalog (<span id="tableCount">0</span>)</summary>
+      <p class="card-caption">Click a column header to sort</p>
+      <div class="pager">
+        <label>Rows per page <select id="pageSize"><option>10</option><option selected>20</option><option>50</option><option>100</option></select></label>
+        <span id="pageInfo"></span>
+        <button id="prevPage" type="button">Previous</button>
+        <button id="nextPage" type="button">Next</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr id="tableHead"></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <details style="margin-top:16px">
+      <summary>Shared backend detail (<span id="sharedCount">0</span>)</summary>
+      <div class="card-body" id="sharedList"></div>
+    </details>
+  </div>
+
+  <script>
+    const DATA = __TOPOLOGY_DATA_JSON__;
+
+    const state = {
+      filter: "",
+      selected: DATA.products[0]?.n ?? "",
+      showApps: false,
+      sortKey: "backends",
+      sortDir: "desc",
+      page: 0,
+      pageSize: 20,
+    };
+
+    const COLS = [
+      { key: "product", label: "Product", num: false },
+      { key: "category", label: "Category", num: false },
+      { key: "auth", label: "Auth", num: false },
+      { key: "backends", label: "Backends", num: true },
+      { key: "apps", label: "Apps", num: true },
+      { key: "policies", label: "Policies", num: true },
+      { key: "policyNames", label: "Policy names", num: false },
+    ];
+
+    function policyChain(pol) {
+      return !pol || pol.length === 0 ? "—" : pol.join(" → ");
+    }
+
+    function compare(a, b, key) {
+      switch (key) {
+        case "product": return a.n.localeCompare(b.n);
+        case "category": return (DATA.cat[a.c] ?? a.c).localeCompare(DATA.cat[b.c] ?? b.c);
+        case "auth": return a.a.localeCompare(b.a);
+        case "backends": return a.e.length - b.e.length;
+        case "apps": return (a.p?.length ?? 0) - (b.p?.length ?? 0);
+        case "policies": return (a.pol?.length ?? 0) - (b.pol?.length ?? 0);
+        case "policyNames": return policyChain(a.pol).localeCompare(policyChain(b.pol));
+      }
+      return 0;
+    }
+
+    function linkCount() {
+      return DATA.products.reduce((n, p) => n + p.e.length, 0);
+    }
+
+    function renderStats() {
+      document.getElementById("subtitle").textContent =
+        `Exported ${DATA.m.exported_at} · ${DATA.m.admin_url}`;
+      const items = [
+        ["API products", DATA.m.product_count],
+        ["Backends", DATA.m.backend_count],
+        ["Applications", DATA.m.application_count],
+        ["Product→backend links", linkCount()],
+      ];
+      document.getElementById("stats").innerHTML = items.map(
+        ([label, value]) => `<div class="stat"><div class="stat-label">${label}</div><div class="stat-value">${value}</div></div>`
+      ).join("");
+    }
+
+    function renderCharts() {
+      const pieLabels = Object.entries(DATA.catCounts).map(([k, v]) => DATA.cat[k] ?? k);
+      const pieValues = Object.values(DATA.catCounts);
+      document.getElementById("pieCaption").textContent =
+        `${DATA.m.product_count} API products grouped by naming domain`;
+      new Chart(document.getElementById("pieChart"), {
+        type: "pie",
+        data: { labels: pieLabels, datasets: [{ data: pieValues }] },
+        options: { plugins: { legend: { position: "bottom" } } },
+      });
+      const labels = DATA.shared.map((s) => s.b.length > 18 ? s.b.slice(0, 16) + "…" : s.b);
+      new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{ label: "Products referencing", data: DATA.shared.map((s) => s.n) }],
+        },
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        },
+      });
+    }
+
+    function filteredProducts() {
+      const q = state.filter.toLowerCase();
+      return DATA.products.filter((p) => p.n.toLowerCase().includes(q));
+    }
+
+    function selectedProduct() {
+      const list = filteredProducts();
+      return DATA.products.find((p) => p.n === state.selected) ?? list[0] ?? DATA.products[0];
+    }
+
+    function renderGraph() {
+      const product = selectedProduct();
+      if (!product) return;
+      const showApps = state.showApps;
+      const apps = product.p ?? [];
+      const backendIds = [...new Set(product.e.map((e) => e[0]))];
+      const targets = [];
+      if (showApps) {
+        apps.forEach((a, i) => targets.push({ kind: "app", label: a[0], idx: i }));
+      }
+      backendIds.forEach((idx) => targets.push({ kind: "backend", label: DATA.backends[idx] ?? String(idx), idx }));
+
+      const rowH = 44;
+      const h = Math.max(120, targets.length * rowH + 40);
+      const w = 720;
+      const svg = document.getElementById("graph");
+      svg.setAttribute("width", w);
+      svg.setAttribute("height", h);
+
+      const px = 24, py = h / 2 - 18, pw = 168, ph = 36;
+      const tx = 280;
+      let html = `<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#999"/></marker></defs>`;
+      html += `<rect x="${px}" y="${py}" width="${pw}" height="${ph}" rx="4" fill="#0078d4" stroke="#ccc"/><text x="${px + pw/2}" y="${py + 22}" text-anchor="middle" fill="#fff" font-size="11">${esc(product.n)}</text>`;
+
+      targets.forEach((t, i) => {
+        const ty = 20 + i * rowH;
+        const fill = t.kind === "app" ? "#f0f0f0" : "#fff";
+        const lx = px + pw, ly = py + ph / 2;
+        const rx = tx, ry = ty + ph / 2;
+        html += `<line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}" stroke="#bbb" stroke-width="1.5" marker-end="url(#arrow)"/>`;
+        html += `<rect x="${tx}" y="${ty}" width="${pw}" height="${ph}" rx="4" fill="${fill}" stroke="#ccc"/>`;
+        html += `<text x="${tx + pw/2}" y="${ty + 22}" text-anchor="middle" font-size="11">${esc(trunc(t.label, 22))}</text>`;
+      });
+      svg.innerHTML = html;
+
+      document.getElementById("productMeta").textContent =
+        `Category: ${DATA.cat[product.c] ?? product.c} · Auth: ${product.a} · ${product.e.length} backend(s)` +
+        (showApps ? ` · ${apps.length} application(s)` : "");
+
+      const pathByBackend = new Map();
+      product.e.forEach(([idx, path]) => {
+        const list = pathByBackend.get(idx) ?? [];
+        list.push(path);
+        pathByBackend.set(idx, list);
+      });
+      document.getElementById("routes").innerHTML = backendIds.length
+        ? "<strong>Routing paths</strong>" + backendIds.map((idx) =>
+            `<div>${esc(DATA.backends[idx])}: ${esc((pathByBackend.get(idx) ?? []).join(", "))}</div>`
+          ).join("")
+        : "";
+      document.getElementById("appList").innerHTML = showApps && apps.length
+        ? `<p><strong>Subscribed applications (${apps.length})</strong></p>` +
+          apps.map((a) => `<div class="shared-detail">${esc(a[0])} · plan ${esc(a[1] || "—")} · ${esc(a[2] || "unknown")}</div>`).join("")
+        : "";
+    }
+
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    }
+    function trunc(s, n) {
+      return s.length > n ? s.slice(0, n - 1) + "…" : s;
+    }
+
+    function renderSelect() {
+      const sel = document.getElementById("productSelect");
+      const list = filteredProducts();
+      sel.innerHTML = list.map((p) => `<option value="${esc(p.n)}"${p.n === state.selected ? " selected" : ""}>${esc(p.n)}</option>`).join("");
+      if (!list.find((p) => p.n === state.selected) && list[0]) state.selected = list[0].n;
+    }
+
+    function sortedProducts() {
+      const mul = state.sortDir === "asc" ? 1 : -1;
+      return [...DATA.products].sort((a, b) => compare(a, b, state.sortKey) * mul);
+    }
+
+    function renderTable() {
+      const sorted = sortedProducts();
+      const size = state.pageSize;
+      const totalPages = Math.max(1, Math.ceil(sorted.length / size));
+      state.page = Math.min(state.page, totalPages - 1);
+      const page = sorted.slice(state.page * size, state.page * size + size);
+
+      document.getElementById("tableCount").textContent = sorted.length;
+      document.getElementById("pageInfo").textContent = `Page ${state.page + 1} of ${totalPages}`;
+      document.getElementById("prevPage").disabled = state.page <= 0;
+      document.getElementById("nextPage").disabled = state.page >= totalPages - 1;
+
+      document.getElementById("tableHead").innerHTML = COLS.map((c) => {
+        const active = state.sortKey === c.key;
+        const arrow = active ? (state.sortDir === "asc" ? " ↑" : " ↓") : "";
+        return `<th class="${c.num ? "num" : ""}" data-key="${c.key}">${c.label}${arrow}</th>`;
+      }).join("");
+
+      document.getElementById("tableBody").innerHTML = page.map((p) => {
+        const pol = p.pol ?? [];
+        return `<tr>
+          <td>${esc(p.n)}</td>
+          <td>${esc(DATA.cat[p.c] ?? p.c)}</td>
+          <td>${esc(p.a)}</td>
+          <td class="num">${p.e.length}</td>
+          <td class="num">${p.p?.length ?? 0}</td>
+          <td class="num">${pol.length}</td>
+          <td>${esc(policyChain(pol))}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function renderShared() {
+      document.getElementById("sharedCount").textContent = DATA.shared.length;
+      document.getElementById("sharedList").innerHTML = DATA.shared.map((s) =>
+        `<div class="shared-item"><div class="shared-title">${esc(s.b)}</div><div class="shared-detail">Referenced by ${s.n} products: ${esc(s.p.join(", "))}${s.n > s.p.length ? " …" : ""}</div></div>`
+      ).join("");
+    }
+
+    function refreshGraphSection() {
+      renderSelect();
+      renderGraph();
+    }
+
+    function refreshAll() {
+      renderTable();
+      refreshGraphSection();
+    }
+
+    document.getElementById("filter").addEventListener("input", (e) => {
+      state.filter = e.target.value;
+      refreshGraphSection();
+    });
+    document.getElementById("productSelect").addEventListener("change", (e) => {
+      state.selected = e.target.value;
+      renderGraph();
+    });
+    document.getElementById("showApps").addEventListener("change", (e) => {
+      state.showApps = e.target.checked;
+      renderGraph();
+    });
+    document.getElementById("pageSize").addEventListener("change", (e) => {
+      state.pageSize = Number(e.target.value);
+      state.page = 0;
+      renderTable();
+    });
+    document.getElementById("prevPage").addEventListener("click", () => { state.page--; renderTable(); });
+    document.getElementById("nextPage").addEventListener("click", () => { state.page++; renderTable(); });
+    document.getElementById("tableHead").addEventListener("click", (e) => {
+      const th = e.target.closest("th");
+      if (!th) return;
+      const key = th.dataset.key;
+      if (state.sortKey === key) {
+        state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+      } else {
+        state.sortKey = key;
+        state.sortDir = COLS.find((c) => c.key === key)?.num ? "desc" : "asc";
+      }
+      state.page = 0;
+      renderTable();
+    });
+
+    renderStats();
+    renderCharts();
+    renderShared();
+    refreshAll();
+  </script>
+</body>
+</html>

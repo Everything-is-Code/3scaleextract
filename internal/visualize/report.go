@@ -9,7 +9,7 @@ import (
 )
 
 // WriteReport generates the Markdown report bundle for a tenant export.
-func WriteReport(t *Tenant, outDir string) error {
+func WriteReport(t *Tenant, outDir string, includeHTMLLink bool) error {
 	if t == nil {
 		return fmt.Errorf("tenant is required")
 	}
@@ -22,7 +22,10 @@ func WriteReport(t *Tenant, outDir string) error {
 		return err
 	}
 
-	if err := writeFile(filepath.Join(outDir, "index.md"), renderIndex(t, outDir)); err != nil {
+	if err := writeFile(filepath.Join(outDir, "index.md"), renderIndex(t, includeHTMLLink)); err != nil {
+		return err
+	}
+	if err := WriteProductsCatalog(t, outDir); err != nil {
 		return err
 	}
 	if err := writeFile(filepath.Join(outDir, "backends.md"), renderBackends(t)); err != nil {
@@ -49,7 +52,7 @@ func writeFile(path string, content string) error {
 	return os.WriteFile(path, []byte(content), 0o644)
 }
 
-func renderIndex(t *Tenant, outDir string) string {
+func renderIndex(t *Tenant, includeHTMLLink bool) string {
 	var b strings.Builder
 	b.WriteString("# 3scale Tenant Report\n\n")
 
@@ -77,6 +80,10 @@ func renderIndex(t *Tenant, outDir string) string {
 	b.WriteString("\n")
 
 	b.WriteString("## Navigation\n\n")
+	b.WriteString("- [Product catalog](products-catalog.md)\n")
+	if includeHTMLLink {
+		b.WriteString("- [Topology dashboard](topology.html)\n")
+	}
 	b.WriteString("- [Backends](backends.md)\n")
 	if t.Manifest.IncludeApplications {
 		b.WriteString("- [Applications](applications.md)\n")
@@ -135,7 +142,6 @@ func renderIndex(t *Tenant, outDir string) string {
 		}
 	}
 	b.WriteString("```\n\n")
-	_ = outDir
 	return b.String()
 }
 
