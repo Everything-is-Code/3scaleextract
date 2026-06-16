@@ -148,7 +148,7 @@ go build -o bin/threescale-visualize ./cmd/threescale-visualize
 
 ```bash
 bin/threescale-export --output ./export --include-applications --redact-secrets
-bin/threescale-visualize ./export -o ./report --canvas ./topology.canvas.tsx
+bin/threescale-visualize ./export -o ./report --html --canvas ./topology.canvas.tsx
 ```
 
 ### Tests
@@ -233,7 +233,7 @@ GitHub Actions runs tests, builds `threescale-export`, `threescale-seed`, and `t
 | Tool | Description |
 |------|-------------|
 | **[docs/SEED.md](docs/SEED.md)** | Load fixtures into a lab tenant to validate export |
-| **[docs/VISUALIZE.md](docs/VISUALIZE.md)** | Generate a Markdown report from an export |
+| **[docs/VISUALIZE.md](docs/VISUALIZE.md)** | Markdown report, product catalog, HTML dashboard, and Cursor canvas from an export |
 | **[testdata/README.md](testdata/README.md)** | Offline export fixture tarball (`export-minimal-1.0.tar.gz`) for tests and GateForge import |
 
 ## License
