@@ -51,7 +51,7 @@ Chained PRs recommended: Yes
 - [x] 4.1 Update `docs/VISUALIZE.md` — catalog, HTML, browser workflow, canvas comparison
 - [x] 4.2 Update `README.md` visualize section (brief)
 - [x] 4.3 `go test ./...`; coverage gate
-- [ ] 4.4 Manual: open `topology-demo.html` in browser; verify table and charts
+- [x] 4.4 Manual: open `topology-demo.html` in browser; verify table and charts
 
 ## Privacy checklist (every phase)
 

@@ -1,0 +1,16 @@
+change: visualize-topology-report
+status: archived
+phases:
+  explore: done
+  propose: done
+  spec: done
+  design: done
+  tasks: done
+  apply: done
+  verify: done
+  archive: done
+delivery:
+  pr: https://github.com/Everything-is-Code/3scaleextract/pull/49
+  release: v0.3.0
+  issue: https://github.com/Everything-is-Code/3scaleextract/issues/48
+archived_at: 2026-06-16
