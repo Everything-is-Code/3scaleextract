@@ -80,9 +80,9 @@ func TestWriteCanvasTSXFromMinimalFixture(t *testing.T) {
 }
 
 func TestPolicyNamesFromProxyFile(t *testing.T) {
-	raw := []byte(`{"proxy":{"policies_config":[{"name":"apicast"},{"name":"headers"}]}}`)
+	raw := []byte(`{"proxy":{"policies_config":[{"name":"apicast","enabled":true},{"name":"headers","enabled":true},{"name":"camel","enabled":false}]}}`)
 	got := policyNamesFromProxyFile(raw)
-	if len(got) != 2 || got[0].Name != "apicast" || got[1].Name != "headers" {
+	if len(got) != 1 || got[0].Name != "headers" {
 		t.Fatalf("policies = %+v", got)
 	}
 }

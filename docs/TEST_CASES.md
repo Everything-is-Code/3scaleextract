@@ -498,6 +498,31 @@ Automation references are verified against the repository at the time of writing
 
 ---
 
+### TC-VIZ-006 — Visible policies only (enabled, no apicast)
+
+| Field | Value |
+|-------|-------|
+| Priority | P1 |
+| CLI | `threescale-visualize` |
+| Automation | **covered** (`TestVisiblePoliciesFromConfig`, `TestParsePoliciesPoliciesConfigRoot`, `TestPolicyNamesFromProxyFile`) |
+
+**Preconditions**
+
+- Export with `policies_config` entries mixing `enabled: true/false` and terminal `apicast`
+
+**Steps**
+
+1. Run visualize against fixture or unit-test JSON with disabled policy
+2. Inspect product page, catalog, canvas/HTML policy columns
+
+**Expected results**
+
+- Disabled policies (`enabled: false`) absent from chain, count, and names
+- `apicast` never listed
+- Missing `enabled` field treated as enabled (fixture backward compat)
+
+---
+
 ## Lab pipeline
 
 ### TC-PIPE-001 — Seed → export → visualize

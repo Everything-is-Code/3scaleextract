@@ -24,25 +24,25 @@ Chained PRs recommended: No
 
 ## Phase 1: Policy visibility in loader
 
-- [ ] 1.1 Add `visiblePoliciesFromConfig` helper (`*bool` enabled, skip `apicast`)
-- [ ] 1.2 Refactor `parsePolicies` to handle root `policies_config` and wrapped `policies`
-- [ ] 1.3 Refactor `policyNamesFromConfig` to share visibility filter
-- [ ] 1.4 Confirm auth path unchanged (`auth.go` reads raw config)
+- [x] 1.1 Add `visiblePoliciesFromConfig` helper (`*bool` enabled, skip `apicast`)
+- [x] 1.2 Refactor `parsePolicies` to handle root `policies_config` and wrapped `policies`
+- [x] 1.3 Refactor `policyNamesFromConfig` to share visibility filter
+- [x] 1.4 Confirm auth path unchanged (`auth.go` reads raw config)
 
 ## Phase 2: Tests
 
-- [ ] 2.1 Unit tests: disabled omitted, apicast omitted, absent `enabled` → visible
-- [ ] 2.2 Update `TestPolicyNamesFromProxyFile` and export-minimal loader tests
-- [ ] 2.3 Report/catalog integration assertions for filtered chains
-- [ ] 2.4 `go test ./...`
+- [x] 2.1 Unit tests: disabled omitted, apicast omitted, absent `enabled` → visible
+- [x] 2.2 Update `TestPolicyNamesFromProxyFile` and export-minimal loader tests
+- [x] 2.3 Report/catalog integration assertions for filtered chains
+- [x] 2.4 `go test ./...`
 
 ## Phase 3: Documentation
 
-- [ ] 3.1 Update `docs/TEST_CASES.md` (TC-VIZ enabled-only policies)
-- [ ] 3.2 Mark tasks complete; grep diff for customer terms
+- [x] 3.1 Update `docs/TEST_CASES.md` (TC-VIZ enabled-only policies)
+- [x] 3.2 Mark tasks complete; grep diff for customer terms
 
 ## Privacy checklist
 
-- [ ] P.1 No customer/tenant names in code, tests, commits, or SDD examples
-- [ ] P.2 Policy test JSON uses fixture names only (`seed_*`, generic policy names)
+- [x] P.1 No customer/tenant names in code, tests, commits, or SDD examples
+- [x] P.2 Policy test JSON uses fixture names only (`seed_*`, generic policy names)
 - [ ] P.3 Grep committed diff before PR
