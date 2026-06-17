@@ -124,10 +124,22 @@ bin/threescale-visualize ./export -o ./report --html --canvas ./topology.canvas.
 
 Use `--include-applications` on export when you want subscribed applications in the canvas graph.
 
+## Policy visibility
+
+Policy chains in the report, catalog, canvas, and HTML dashboard show **visible policies only**:
+
+| Rule | Behavior |
+|------|----------|
+| `enabled: false` | Omitted from chain, count, and policy names column |
+| `enabled` absent | Treated as enabled (fixture exports without the field) |
+| `apicast` | Always omitted (built-in gateway policy, not user-configured) |
+
+Sources: `products/{name}/policies.json` (wrapped `policies` or root `policies_config`), falling back to `proxy.json` when needed. Auth inference still reads raw `policies_config` unchanged.
+
 ## Limitations (v1)
 
 - Read-only from on-disk export; does not call Admin API
 - Does not include `policies/catalog.json` content (global reference, not tenant config)
-- Policy chains are read from `policies.json` when present, otherwise from `proxy.json` (`policies_config`)
+- Policy chains are read from `policies.json` when present, otherwise from `proxy.json` (`policies_config`); only **enabled** user policies are shown (`apicast` excluded)
 - Redacted secrets (`***REDACTED***`) are shown as-is — not de-redacted
 - Canvas requires Cursor IDE; the Markdown report and HTML dashboard work everywhere

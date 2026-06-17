@@ -45,4 +45,4 @@ Chained PRs recommended: No
 
 - [x] P.1 No customer/tenant names in code, tests, commits, or SDD examples
 - [x] P.2 Policy test JSON uses fixture names only (`seed_*`, generic policy names)
-- [ ] P.3 Grep committed diff before PR
+- [x] P.3 Grep committed diff before PR

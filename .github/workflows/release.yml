@@ -68,15 +68,13 @@ jobs:
             ## What's new in v${{ steps.version.outputs.tag }}
 
             ### threescale-visualize
-            - **`--html`** — self-contained browser topology dashboard (`topology.html`): stats, Chart.js charts, product→backend graph, sortable product table with policy chains. No Cursor required.
-            - **`products-catalog.md`** — consolidated Markdown table (auth, backends, apps, policies) linked from `index.md`.
-            - Shared **`BuildTopologyData`** payload for canvas, catalog, and HTML (replaces internal canvas-only builder).
-            - Demo HTML: [docs/examples/topology-demo.html](https://github.com/${{ github.repository }}/blob/main/docs/examples/topology-demo.html).
+            - **Enabled policies only** — policy chains in Markdown, catalog, canvas, and HTML omit `enabled: false` entries and the built-in `apicast` policy. Missing `enabled` is treated as enabled.
+            - Parses root `policies_config` in `policies.json` (live exports) in addition to wrapped `policies` format.
 
             ### threescale-export / threescale-seed
-            - No changes in this release (same binaries as v0.2.0).
+            - No changes in this release.
 
-            See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md).
+            See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md) (Policy visibility section).
 
             ---
 
@@ -97,22 +95,14 @@ jobs:
               --redact-secrets
             ```
 
-            Use `--redact-secrets` when sharing exports outside the tenant team. See [README — Run the binary](https://github.com/${{ github.repository }}#run-the-binary) for Docker/toolbox prerequisites.
-
             ### 2. Visualize (optional)
 
             ```bash
             tar xzf threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
             chmod +x threescale-visualize
 
-            # Markdown report + product catalog
             ./threescale-visualize ./export -o ./report
-
-            # Report + HTML topology dashboard (open topology.html in a browser)
             ./threescale-visualize ./export -o ./report --html
-
-            # Report + Cursor topology canvas
-            ./threescale-visualize ./export -o ./report --canvas ./topology.canvas.tsx
             ```
 
             Full guide: [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md).
@@ -120,8 +110,7 @@ jobs:
             ## Lab / demo (optional)
 
             - `threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — [docs/SEED.md](https://github.com/${{ github.repository }}/blob/main/docs/SEED.md)
-            - `export-minimal-1.0.tar.gz` — offline fixture; [testdata/README.md](https://github.com/${{ github.repository }}/blob/main/testdata/README.md)
-            - Demo canvas: [docs/examples/topology-demo.canvas.tsx](https://github.com/${{ github.repository }}/blob/main/docs/examples/topology-demo.canvas.tsx)
+            - `export-minimal-1.0.tar.gz` — offline fixture
             - Demo HTML: [docs/examples/topology-demo.html](https://github.com/${{ github.repository }}/blob/main/docs/examples/topology-demo.html)
 
             ## Verification
