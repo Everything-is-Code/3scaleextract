@@ -330,10 +330,6 @@ func policyNamesFromProxyFile(data []byte) []Policy {
 	return parsePolicyConfigJSONArray(envelope.Proxy.PoliciesConfig)
 }
 
-func policyNamesFromConfig(raw json.RawMessage) []Policy {
-	return parsePolicyConfigJSONArray(raw)
-}
-
 func parsePolicies(data []byte) []Policy {
 	var root struct {
 		Policies []struct {
