@@ -1,0 +1,19 @@
+change: visualize-enabled-policies-only
+status: archived
+phases:
+  explore: done
+  propose: done
+  spec: done
+  design: done
+  tasks: done
+  apply: done
+  verify: done
+  archive: done
+delivery:
+  pr: https://github.com/Everything-is-Code/3scaleextract/pull/51
+  release: v0.3.1
+  issue: https://github.com/Everything-is-Code/3scaleextract/issues/50
+archived_at: 2026-06-17
+decisions:
+  exclude_apicast: true
+  enabled_default_when_absent: true
