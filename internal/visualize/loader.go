@@ -274,6 +274,50 @@ func parseProxy(data []byte, product *Product) error {
 	return nil
 }
 
+const hiddenPolicyApicast = "apicast"
+
+type policyConfigEntry struct {
+	Name    string `json:"name"`
+	Enabled *bool  `json:"enabled"`
+}
+
+func policyVisible(name string, enabled *bool) bool {
+	if name == "" || name == hiddenPolicyApicast {
+		return false
+	}
+	if enabled != nil && !*enabled {
+		return false
+	}
+	return true
+}
+
+func visiblePoliciesFromEntries(entries []policyConfigEntry) []Policy {
+	out := make([]Policy, 0, len(entries))
+	for _, entry := range entries {
+		if policyVisible(entry.Name, entry.Enabled) {
+			out = append(out, Policy{Name: entry.Name})
+		}
+	}
+	return out
+}
+
+func parsePolicyConfigJSONArray(raw json.RawMessage) []Policy {
+	if len(raw) == 0 {
+		return nil
+	}
+	var entries []policyConfigEntry
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		var encoded string
+		if json.Unmarshal(raw, &encoded) != nil {
+			return nil
+		}
+		if err := json.Unmarshal([]byte(encoded), &entries); err != nil {
+			return nil
+		}
+	}
+	return visiblePoliciesFromEntries(entries)
+}
+
 func policyNamesFromProxyFile(data []byte) []Policy {
 	var envelope struct {
 		Proxy struct {
@@ -283,52 +327,33 @@ func policyNamesFromProxyFile(data []byte) []Policy {
 	if err := json.Unmarshal(data, &envelope); err != nil {
 		return nil
 	}
-	return policyNamesFromConfig(envelope.Proxy.PoliciesConfig)
-}
-
-func policyNamesFromConfig(raw json.RawMessage) []Policy {
-	if len(raw) == 0 {
-		return nil
-	}
-	var policies []struct {
-		Name string `json:"name"`
-	}
-	if err := json.Unmarshal(raw, &policies); err != nil {
-		var encoded string
-		if json.Unmarshal(raw, &encoded) != nil {
-			return nil
-		}
-		if err := json.Unmarshal([]byte(encoded), &policies); err != nil {
-			return nil
-		}
-	}
-	out := make([]Policy, 0, len(policies))
-	for _, policy := range policies {
-		if policy.Name != "" {
-			out = append(out, Policy{Name: policy.Name})
-		}
-	}
-	return out
+	return parsePolicyConfigJSONArray(envelope.Proxy.PoliciesConfig)
 }
 
 func parsePolicies(data []byte) []Policy {
-	var envelope struct {
+	var root struct {
 		Policies []struct {
 			Policy struct {
-				Name string `json:"name"`
+				Name    string `json:"name"`
+				Enabled *bool  `json:"enabled"`
 			} `json:"policy"`
 		} `json:"policies"`
+		PoliciesConfig json.RawMessage `json:"policies_config"`
 	}
-	if err := json.Unmarshal(data, &envelope); err != nil {
+	if err := json.Unmarshal(data, &root); err != nil {
 		return nil
 	}
-	out := make([]Policy, 0, len(envelope.Policies))
-	for _, item := range envelope.Policies {
-		if item.Policy.Name != "" {
-			out = append(out, Policy{Name: item.Policy.Name})
+	if len(root.Policies) > 0 {
+		entries := make([]policyConfigEntry, 0, len(root.Policies))
+		for _, item := range root.Policies {
+			entries = append(entries, policyConfigEntry{
+				Name:    item.Policy.Name,
+				Enabled: item.Policy.Enabled,
+			})
 		}
+		return visiblePoliciesFromEntries(entries)
 	}
-	return out
+	return parsePolicyConfigJSONArray(root.PoliciesConfig)
 }
 
 func parseBackendUsages(data []byte) []BackendUsage {

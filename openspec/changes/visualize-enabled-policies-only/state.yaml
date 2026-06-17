@@ -1,0 +1,14 @@
+change: visualize-enabled-policies-only
+status: active
+phases:
+  explore: done
+  propose: done
+  spec: done
+  design: done
+  tasks: done
+  apply: done
+  verify: pending
+  archive: pending
+decisions:
+  exclude_apicast: true
+  enabled_default_when_absent: true
