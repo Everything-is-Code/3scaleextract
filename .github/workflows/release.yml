@@ -68,13 +68,13 @@ jobs:
             ## What's new in v${{ steps.version.outputs.tag }}
 
             ### threescale-visualize
-            - **Enabled policies only** — policy chains in Markdown, catalog, canvas, and HTML omit `enabled: false` entries and the built-in `apicast` policy. Missing `enabled` is treated as enabled.
-            - Parses root `policies_config` in `policies.json` (live exports) in addition to wrapped `policies` format.
+            - **Products by domain** — `index.md` includes a domain summary table (count and percent). HTML and Cursor canvas add a **Show percentages** toggle on the domain pie chart; zero-count domains are omitted from the pie.
+            - **Enabled policies only** (since v0.3.1) — policy chains omit `enabled: false` and `apicast`; missing `enabled` is treated as enabled.
 
             ### threescale-export / threescale-seed
             - No changes in this release.
 
-            See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md) (Policy visibility section).
+            See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md) (domain summary and policy visibility sections).
 
             ---
 

@@ -50,6 +50,21 @@
       font-weight: 600;
       border-bottom: 1px solid var(--border-light);
     }
+    .card-header-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-header-row label {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin: 0;
+      font-weight: normal;
+      cursor: pointer;
+    }
     .card-body { padding: 16px; }
     .card-caption { font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; }
     label { font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
@@ -98,7 +113,12 @@
 
     <div class="grid-2">
       <div class="card">
-        <div class="card-header">Products by domain</div>
+        <div class="card-header">
+          <div class="card-header-row">
+            <span>Products by domain</span>
+            <label><input type="checkbox" id="domainShowPercent" /> Show percentages</label>
+          </div>
+        </div>
         <div class="card-body"><canvas id="pieChart" height="220"></canvas>
           <p class="card-caption" id="pieCaption"></p>
         </div>
@@ -207,15 +227,58 @@
       ).join("");
     }
 
+    let pieChart = null;
+    let domainPieEntries = [];
+
+    function domainPieEntriesFromData() {
+      return Object.entries(DATA.catCounts)
+        .filter(([, count]) => count > 0)
+        .map(([key, count]) => ({
+          key,
+          label: DATA.cat[key] ?? key,
+          count,
+        }));
+    }
+
+    function formatDomainLabel(entry, showPercent) {
+      if (!showPercent || DATA.m.product_count === 0) {
+        return `${entry.label}: ${entry.count}`;
+      }
+      const pct = Math.round((entry.count / DATA.m.product_count) * 100);
+      return `${entry.label}: ${entry.count} (${pct}%)`;
+    }
+
+    function updateDomainPieDisplay() {
+      if (!pieChart) return;
+      const showPercent = document.getElementById("domainShowPercent").checked;
+      pieChart.data.labels = domainPieEntries.map((entry) => formatDomainLabel(entry, showPercent));
+      pieChart.update();
+    }
+
     function renderCharts() {
-      const pieLabels = Object.entries(DATA.catCounts).map(([k, v]) => DATA.cat[k] ?? k);
-      const pieValues = Object.values(DATA.catCounts);
+      domainPieEntries = domainPieEntriesFromData();
+      const showPercent = document.getElementById("domainShowPercent").checked;
       document.getElementById("pieCaption").textContent =
         `${DATA.m.product_count} API products grouped by naming domain`;
-      new Chart(document.getElementById("pieChart"), {
+      pieChart = new Chart(document.getElementById("pieChart"), {
         type: "pie",
-        data: { labels: pieLabels, datasets: [{ data: pieValues }] },
-        options: { plugins: { legend: { position: "bottom" } } },
+        data: {
+          labels: domainPieEntries.map((entry) => formatDomainLabel(entry, showPercent)),
+          datasets: [{ data: domainPieEntries.map((entry) => entry.count) }],
+        },
+        options: {
+          plugins: {
+            legend: { position: "bottom" },
+            tooltip: {
+              callbacks: {
+                label(ctx) {
+                  const entry = domainPieEntries[ctx.dataIndex];
+                  return formatDomainLabel(entry, document.getElementById("domainShowPercent").checked);
+                },
+              },
+            },
+          },
+        },
       });
       const labels = DATA.shared.map((s) => s.b.length > 18 ? s.b.slice(0, 16) + "…" : s.b);
       new Chart(document.getElementById("barChart"), {
@@ -378,6 +441,9 @@
     document.getElementById("showApps").addEventListener("change", (e) => {
       state.showApps = e.target.checked;
       renderGraph();
+    });
+    document.getElementById("domainShowPercent").addEventListener("change", () => {
+      updateDomainPieDisplay();
     });
     document.getElementById("pageSize").addEventListener("change", (e) => {
       state.pageSize = Number(e.target.value);

@@ -2,6 +2,7 @@ package visualize
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -78,6 +79,8 @@ func renderIndex(t *Tenant, includeHTMLLink bool) string {
 		b.WriteString(fmt.Sprintf("| Applications | %d |\n", t.Manifest.ApplicationCount))
 	}
 	b.WriteString("\n")
+
+	b.WriteString(renderDomainSummary(t))
 
 	b.WriteString("## Navigation\n\n")
 	b.WriteString("- [Product catalog](products-catalog.md)\n")
@@ -329,6 +332,66 @@ func authLabel(authType string) string {
 	default:
 		return authType
 	}
+}
+
+type domainSummaryRow struct {
+	Domain  string
+	Count   int
+	Percent int
+}
+
+var domainCategoryOrder = []string{"I", "B", "S", "P"}
+
+func domainSummaryRows(data TopologyData) []domainSummaryRow {
+	total := 0
+	if v, ok := data.Manifest["product_count"]; ok {
+		switch n := v.(type) {
+		case int:
+			total = n
+		case float64:
+			total = int(n)
+		}
+	}
+
+	rows := make([]domainSummaryRow, 0, len(domainCategoryOrder))
+	for _, key := range domainCategoryOrder {
+		count := data.CatCounts[key]
+		if count <= 0 {
+			continue
+		}
+		pct := 0
+		if total > 0 {
+			pct = int(math.Round(float64(count) / float64(total) * 100))
+		}
+		label := data.Cat[key]
+		if label == "" {
+			label = key
+		}
+		rows = append(rows, domainSummaryRow{
+			Domain:  label,
+			Count:   count,
+			Percent: pct,
+		})
+	}
+	return rows
+}
+
+func renderDomainSummary(t *Tenant) string {
+	data := BuildTopologyData(t)
+	rows := domainSummaryRows(data)
+	if len(rows) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString("## Products by domain\n\n")
+	b.WriteString("| Domain | Count | Percent |\n")
+	b.WriteString("|--------|------:|--------:|\n")
+	for _, row := range rows {
+		b.WriteString(fmt.Sprintf("| %s | %d | %d%% |\n", mdCell(row.Domain), row.Count, row.Percent))
+	}
+	b.WriteString("\n")
+	return b.String()
 }
 
 func mdCell(value string) string {

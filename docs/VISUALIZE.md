@@ -45,7 +45,7 @@ bin/threescale-visualize ./export -o ./report --canvas ./topology.canvas.tsx
 
 ```
 report/
-├── index.md              # overview, auth matrix, Mermaid graph
+├── index.md              # overview, domain summary, auth matrix, Mermaid graph
 ├── products-catalog.md   # sortable table: auth, backends, apps, policies
 ├── topology.html         # only with --html
 ├── backends.md           # backend catalog
@@ -54,7 +54,7 @@ report/
     └── {system_name}.md  # auth, policies, plans, backends
 ```
 
-Open `index.md` in GitHub, VS Code, or Cursor to navigate via relative links. Mermaid diagrams render on GitHub and in compatible editors.
+Open `index.md` in GitHub, VS Code, or Cursor to navigate via relative links. The index includes a **Products by domain** table (count and percent per naming domain). Mermaid diagrams render on GitHub and in compatible editors.
 
 ## HTML topology dashboard
 
@@ -65,6 +65,8 @@ bin/threescale-visualize ./export -o ./report --html
 ```
 
 Open `report/topology.html` in any modern browser. Chart.js is loaded from a CDN; the file embeds export data inline (no server required).
+
+The **Products by domain** pie chart includes a **Show percentages** toggle that switches legend and tooltip labels between count-only (`Domain: N`) and count with percent (`Domain: N (P%)`). Domains with zero products are omitted from the pie.
 
 ### Demo HTML (lab fixture)
 
@@ -87,6 +89,8 @@ The canvas is an optional interactive view (charts, product→backend graph, sor
 ```bash
 bin/threescale-visualize ./export --canvas ./topology.canvas.tsx
 ```
+
+The **Products by domain** card matches the HTML toggle: use **Show percentages** to switch legend rows between count-only and count with percent. Domains with zero products are omitted from the pie.
 
 ### Open the canvas in Cursor
 

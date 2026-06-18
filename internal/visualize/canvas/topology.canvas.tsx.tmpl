@@ -17,6 +17,7 @@ import {
   Stat,
   Text,
   TextInput,
+  Toggle,
   useCanvasState,
   useHostTheme,
 } from "cursor/canvas";
@@ -357,6 +358,7 @@ export default function TopologyCanvas() {
   const [pageSize, setPageSize] = useCanvasState("pageSize", 20);
   const [tableSortKey, setTableSortKey] = useCanvasState<TableSortKey>("tableSortKey", "backends");
   const [tableSortDir, setTableSortDir] = useCanvasState<TableSortDir>("tableSortDir", "desc");
+  const [domainShowPercent, setDomainShowPercent] = useCanvasState("domainShowPercent", false);
 
   const handleSort = (key: TableSortKey) => {
     if (tableSortKey === key) {
@@ -387,10 +389,22 @@ export default function TopologyCanvas() {
   const pageStart = currentPage * size;
   const pageProducts = sortedProducts.slice(pageStart, pageStart + size);
 
-  const pieData = Object.entries(DATA.catCounts).map(([key, value]) => ({
-    label: DATA.cat[key] ?? key,
-    value,
-  }));
+  const pieEntries = Object.entries(DATA.catCounts)
+    .filter(([, value]) => value > 0)
+    .map(([key, value]) => ({
+      key,
+      label: DATA.cat[key] ?? key,
+      value,
+    }));
+  const pieData = pieEntries.map(({ label, value }) => ({ label, value }));
+
+  const formatDomainLegend = (label: string, count: number) => {
+    if (!domainShowPercent || DATA.m.product_count === 0) {
+      return `${label}: ${count}`;
+    }
+    const pct = Math.round((count / DATA.m.product_count) * 100);
+    return `${label}: ${count} (${pct}%)`;
+  };
 
   const sharedCategories = DATA.shared.map((s) =>
     s.b.length > 18 ? `${s.b.slice(0, 16)}…` : s.b,
@@ -420,9 +434,25 @@ export default function TopologyCanvas() {
 
       <Grid columns={2} gap={16}>
         <Card>
-          <CardHeader>Products by domain</CardHeader>
+          <CardHeader>
+            <Row gap={8} align="center" wrap>
+              <Text>Products by domain</Text>
+              <Spacer />
+              <Row gap={8} align="center">
+                <Text tone="secondary" size="small">Show percentages</Text>
+                <Toggle checked={domainShowPercent} onChange={setDomainShowPercent} />
+              </Row>
+            </Row>
+          </CardHeader>
           <CardBody>
             <PieChart data={pieData} size={220} />
+            <Stack gap={4}>
+              {pieEntries.map(({ key, label, value }) => (
+                <Text key={key} tone="tertiary" size="small">
+                  {formatDomainLegend(label, value)}
+                </Text>
+              ))}
+            </Stack>
             <Text tone="tertiary" size="small">
               {DATA.m.product_count} API products grouped by naming domain
             </Text>
