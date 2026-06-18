@@ -72,7 +72,7 @@ func TestWriteCanvasTSXFromMinimalFixture(t *testing.T) {
 	if !json.Valid([]byte(payload)) {
 		t.Fatal("embedded canvas DATA is not valid JSON")
 	}
-	for _, want := range []string{"TopologyCanvas", "seed_alpha", "cursor/canvas", "Policy names"} {
+	for _, want := range []string{"TopologyCanvas", "seed_alpha", "cursor/canvas", "Policy names", "domainShowPercent", "Toggle", "Show percentages"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("missing %q in canvas output", want)
 		}

@@ -381,6 +381,7 @@ Automation references are verified against the repository at the time of writing
 - Report directory contains `index.md`, `products-catalog.md`, `backends.md`, `products/{system_name}.md`
 - `applications.md` when export included applications
 - Mermaid graph and auth matrix in index
+- `index.md` includes **Products by domain** table (Domain, Count, Percent) for non-zero naming domains
 
 **Notes**
 
@@ -495,6 +496,8 @@ Automation references are verified against the repository at the time of writing
 - `topology.html` is self-contained with embedded JSON and Chart.js CDN
 - `index.md` links to `topology.html` and `products-catalog.md`
 - Demo artifact `docs/examples/topology-demo.html` uses fixture names only (`seed_alpha`, `seed_multi_backend`)
+- **Products by domain** chart includes **Show percentages** toggle (count-only vs count with percent in legend/tooltip)
+- Domains with zero products are omitted from the pie chart
 
 ---
 
@@ -520,6 +523,37 @@ Automation references are verified against the repository at the time of writing
 - Disabled policies (`enabled: false`) absent from chain, count, and names
 - `apicast` never listed
 - Missing `enabled` field treated as enabled (fixture backward compat)
+
+---
+
+### TC-VIZ-007 — Products by domain count/percent display
+
+| Field | Value |
+|-------|-------|
+| Priority | P2 |
+| CLI | `threescale-visualize` |
+| Automation | **covered** (`TestWriteReportBundle`, `TestWriteTopologyHTMLFromMinimalFixture`, `TestWriteCanvasTSXFromMinimalFixture`) |
+
+**Preconditions**
+
+- Valid export at `internal/visualize/testdata/export-minimal` (two Business API products)
+
+**Steps**
+
+1. Run `threescale-visualize internal/visualize/testdata/export-minimal -o /tmp/report`
+2. Run with `--html` and open `topology.html`; toggle **Show percentages** on the domain pie card
+3. Optionally generate `--canvas` and toggle **Show percentages** in Cursor
+
+**Expected results**
+
+- `index.md` contains `## Products by domain` with `| Business API | 2 | 100% |` (Count and Percent always visible; no interactive toggle in Markdown)
+- HTML/canvas contain `domainShowPercent` control and legend rows switching between `Domain: N` and `Domain: N (P%)`
+- Pie chart lists only domains with count greater than zero (Integration/SAP/Platform omitted when empty)
+
+**Notes**
+
+- Percentages rounded to nearest whole percent of total product count
+- Demo artifacts: `docs/examples/topology-demo.{html,canvas.tsx}`
 
 ---
 

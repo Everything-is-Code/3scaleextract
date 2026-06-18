@@ -37,6 +37,8 @@ func TestWriteTopologyHTMLFromMinimalFixture(t *testing.T) {
 		"Product catalog",
 		"chart.js",
 		"Policy names",
+		"domainShowPercent",
+		"Show percentages",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("missing %q in html output", want)

@@ -36,7 +36,7 @@ func TestWriteReportBundle(t *testing.T) {
 		t.Fatal(err)
 	}
 	indexText := string(index)
-	for _, want := range []string{"API Key", "OIDC", "flowchart LR", "seed_alpha", "shared_payments", "Product catalog", "products-catalog.md"} {
+	for _, want := range []string{"API Key", "OIDC", "flowchart LR", "seed_alpha", "shared_payments", "Product catalog", "products-catalog.md", "## Products by domain", "| Domain | Count | Percent |", "Business API | 2 | 100% |"} {
 		if !strings.Contains(indexText, want) {
 			t.Fatalf("index.md missing %q", want)
 		}
