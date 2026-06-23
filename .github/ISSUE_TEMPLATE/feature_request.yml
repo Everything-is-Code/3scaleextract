@@ -33,5 +33,5 @@ body:
       label: Impacted repos
       options:
         - label: 3scaleextract
-        - label: gateforge
+        - label: apishift
         - label: rhcl-ai

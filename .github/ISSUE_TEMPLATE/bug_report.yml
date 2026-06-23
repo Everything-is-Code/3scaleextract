@@ -14,7 +14,7 @@ body:
       label: Affected repo
       options:
         - 3scaleextract
-        - gateforge
+        - apishift
         - rhcl-ai
     validations:
       required: true

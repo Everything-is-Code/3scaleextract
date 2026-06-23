@@ -1,6 +1,6 @@
 # Offline export fixtures
 
-Versioned tarball of a minimal 3scale tenant export for offline tests and cross-repo import validation (GateForge INT-3).
+Versioned tarball of a minimal 3scale tenant export for offline tests and cross-repo import validation (ApiShift INT-3).
 
 ## Version
 
@@ -79,4 +79,4 @@ git add testdata/export-minimal-1.0.tar.gz testdata/export-minimal-1.0.tar.gz.sh
 ## Related
 
 - [3scaleextract #10](https://github.com/Everything-is-Code/3scaleextract/issues/10) — publish fixture tarball
-- [GateForge #19](https://github.com/Everything-is-Code/gateforge/issues/19) — consume in import tests
+- [ApiShift #19](https://github.com/Everything-is-Code/apishift/issues/19) — consume in import tests
