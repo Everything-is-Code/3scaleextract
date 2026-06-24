@@ -6,3 +6,5 @@ dist/
 *.test
 coverage.out
 .atl/
+.engram/
+coverage-export.out
