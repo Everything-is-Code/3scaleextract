@@ -10,7 +10,7 @@
 - [ ] New feature
 - [ ] Tests / CI
 - [ ] Documentation
-- [ ] Integration cross-repo (3scaleextract ↔ gateforge)
+- [ ] Integration cross-repo (3scaleextract ↔ apishift)
 - [ ] Breaking change
 
 ## Breaking change

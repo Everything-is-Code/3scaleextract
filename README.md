@@ -234,7 +234,7 @@ GitHub Actions runs tests, builds `threescale-export`, `threescale-seed`, and `t
 |------|-------------|
 | **[docs/SEED.md](docs/SEED.md)** | Load fixtures into a lab tenant to validate export |
 | **[docs/VISUALIZE.md](docs/VISUALIZE.md)** | Markdown report, product catalog, HTML dashboard, and Cursor canvas from an export |
-| **[testdata/README.md](testdata/README.md)** | Offline export fixture tarball (`export-minimal-1.0.tar.gz`) for tests and GateForge import |
+| **[testdata/README.md](testdata/README.md)** | Offline export fixture tarball (`export-minimal-1.0.tar.gz`) for tests and ApiShift import |
 
 ## License
 

@@ -2,7 +2,7 @@
 
 Consolidated test cases for common user journeys across `threescale-export`, `threescale-seed`, and `threescale-visualize`, plus the lab pipeline and CI workflows.
 
-**Audience:** contributors, product owners, and downstream consumers (e.g. GateForge offline tests).
+**Audience:** contributors, product owners, and downstream consumers (e.g. ApiShift offline tests).
 
 This catalog complements `go test ./...`; it does not replace running the test suite or lab validation.
 
