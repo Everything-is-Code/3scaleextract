@@ -100,6 +100,8 @@ source scripts/load-env.sh
 
 The script builds both binaries, runs seed, and exports to `THREESCALE_OUTPUT_DIR` (default `./export`).
 
+**Full E2E** (seed → export → visualize → GateForge analyze): use [GateForge `scripts/e2e-seed-export-analyze.sh`](https://github.com/Everything-is-Code/gateforge/blob/main/scripts/e2e-seed-export-analyze.sh) or [rhcl-ai `scripts/e2e-lab.sh`](https://github.com/Everything-is-Code/rhcl-ai/blob/main/scripts/e2e-lab.sh) ([PR #6](https://github.com/Everything-is-Code/rhcl-ai/pull/6)).
+
 ## Code
 
 | Path | Description |
