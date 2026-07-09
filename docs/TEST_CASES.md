@@ -21,16 +21,16 @@ Automation references are verified against the repository at the time of writing
 
 | Metric | Count |
 |--------|------:|
-| Total cases | 18 |
-| Automated | 15 |
+| Total cases | 20 |
+| Automated | 17 |
 | Manual | 2 |
 | Gap | 1 |
 
 | Priority | Count |
 |----------|------:|
-| P0 | 5 |
+| P0 | 6 |
 | P1 | 5 |
-| P2 | 6 |
+| P2 | 7 |
 | P3 | 2 |
 
 ---
@@ -233,6 +233,57 @@ Automation references are verified against the repository at the time of writing
 - Default: export completes with `manifest.warnings[]` entries and `incomplete: true` when sidecars are skipped (`RecordSkip`)
 - `--strict`: export aborts with `ErrStrictSidecar`; manifest may still be written with `incomplete: true`
 - Visualizer surfaces warnings in the report index (`## Export warnings`)
+
+---
+
+### TC-EXP-008 — Export with `--include-metrics`
+
+| Field | Value |
+|-------|-------|
+| Priority | P0 |
+| CLI | `threescale-export` |
+| Automation | `TestExportIncludeMetrics` (`internal/export/exporter_test.go`), `TestVerifyExportWithMetrics` (`internal/export/verify_test.go`), `TestRunExportIncludeMetrics` (`internal/cli/cli_test.go`) |
+
+**Preconditions**
+
+- Same as TC-EXP-001
+- Tenant on Enterprise tier with Analytics API access (lab or mock)
+
+**Steps**
+
+1. Run `threescale-export --output ./export --include-metrics --metrics-since 2026-01-01 --metrics-until 2026-01-31`
+2. Inspect `stats/` and `manifest.json`
+
+**Expected results**
+
+- `manifest.json` includes `include_metrics: true` and metrics window fields
+- `stats/query.json` records the query window and product list
+- `stats/products/{system_name}/hits.json` per exported product
+- `VerifyExport` validates stats layout when `include_metrics` is true
+
+---
+
+### TC-EXP-009 — Standalone metrics subcommand
+
+| Field | Value |
+|-------|-------|
+| Priority | P2 |
+| CLI | `threescale-export metrics` |
+| Automation | `TestRunMetricsHappyPath` (`internal/cli/cli_test.go`) |
+
+**Preconditions**
+
+- Valid Admin URL and token with Analytics scope
+
+**Steps**
+
+1. Run `threescale-export metrics --output ./export --metrics-since 2026-01-01 --metrics-until 2026-01-31`
+2. Inspect output directory
+
+**Expected results**
+
+- Only `stats/` artifacts are written (no full `manifest.json`)
+- `stats/query.json` and per-product `hits.json` files present
 
 ---
 

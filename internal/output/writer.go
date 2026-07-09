@@ -18,6 +18,11 @@ type Manifest struct {
 	BackendCount        int      `json:"backend_count"`
 	ApplicationCount    int      `json:"application_count,omitempty"`
 	IncludeApplications bool     `json:"include_applications"`
+	IncludeMetrics      bool     `json:"include_metrics,omitempty"`
+	MetricsSince        string   `json:"metrics_since,omitempty"`
+	MetricsUntil        string   `json:"metrics_until,omitempty"`
+	MetricsGranularity  string   `json:"metrics_granularity,omitempty"`
+	MetricsMetric       string   `json:"metrics_metric,omitempty"`
 	Incomplete          bool     `json:"incomplete"`
 	Warnings            []string `json:"warnings,omitempty"`
 }
@@ -54,6 +59,8 @@ func (w *Writer) EnsureLayout() error {
 		"applications",
 		"accounts",
 		"policies",
+		"stats",
+		"stats/products",
 	} {
 		if err := os.MkdirAll(filepath.Join(w.root, dir), 0o755); err != nil {
 			return err

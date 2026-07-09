@@ -81,6 +81,11 @@ The hybrid export combines:
 | `--token` | Personal Access Token |
 | `--output` | Output directory (default `./export`) |
 | `--include-applications` | Include applications and accounts (paginated) |
+| `--include-metrics` | Include Analytics API hit traffic under `stats/` (Enterprise + PAT Analytics scope) |
+| `--metrics-since` | Metrics window start (`YYYY-MM-DD` UTC; default 30 days before `--metrics-until`) |
+| `--metrics-until` | Metrics window end (`YYYY-MM-DD` UTC; default today UTC) |
+| `--metrics-granularity` | `day`, `hour`, or `month` (default `day`) |
+| `--metrics-metric` | Metric name for usage queries (default `hits`) |
 | `--redact-secrets` | Opt-in: mask sensitive keys in JSON/YAML artifacts (see [Redaction](#redaction) below) |
 | `--per-page` | Admin API page size (max 500) |
 | `--concurrency` | Concurrent requests (default 4) |
@@ -111,6 +116,19 @@ Self-signed TLS (Admin Portal or toolbox):
 **Preserved auth-mode flags** (not secrets): `auth_user_key`, `auth_app_id`, `auth_app_key`
 
 After redaction, a cleartext scan runs over the same artifacts. If any sensitive value or issuer userinfo remains, **export fails** with a path-qualified error.
+
+### Hit metrics (Analytics API)
+
+Optional hit traffic can be exported with `--include-metrics` on a full export, or with the standalone subcommand:
+
+```bash
+./threescale-export metrics \
+  --output ./export \
+  --metrics-since 2026-01-01 \
+  --metrics-until 2026-01-31
+```
+
+Requires **Enterprise** tier and a Personal Access Token with **Analytics** scope. On failure the export exits non-zero (no partial stats when the flag is set).
 
 ### Visualize the export
 
@@ -208,12 +226,16 @@ export/
 ├── backends/{system_name}.json
 ├── policies/catalog.json
 ├── applications/page-{n}.json        # with --include-applications
-└── accounts/{id}.json
+├── accounts/{id}.json
+└── stats/                              # with --include-metrics or `metrics` subcommand
+    ├── query.json
+    └── products/{system_name}/hits.json
 ```
 
 ## Limitations
 
-- Does not export billing, Developer Portal, or analytics
+- Does not export billing or Developer Portal content
+- Analytics hit metrics require Enterprise tier and PAT Analytics scope (`--include-metrics` or `metrics` subcommand)
 - Requires access to `registry.redhat.io` and a container runtime
 - Product YAML export depends on the official Red Hat toolbox image
 

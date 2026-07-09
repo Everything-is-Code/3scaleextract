@@ -3,6 +3,8 @@ package export
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,6 +59,37 @@ func TestVerifyExportLayout(t *testing.T) {
 		AdminURL: "https://tenant.example.com",
 		Token:    "tok",
 		OutDir:   dir,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifyExport(dir); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestVerifyExportWithMetrics(t *testing.T) {
+	statsSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/stats/services/10/usage.json" {
+			_, _ = w.Write([]byte(`{"periods":[]}`))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer statsSrv.Close()
+
+	dir := t.TempDir()
+	svc := NewService(defaultScopeMockClient(), &mockToolbox{
+		outputs: map[string][]byte{"payments": []byte("apiVersion: v1\nkind: Product\n")},
+	})
+	if _, err := svc.Export(context.Background(), Options{
+		AdminURL:           statsSrv.URL,
+		Token:              "tok",
+		OutDir:             dir,
+		IncludeMetrics:     true,
+		MetricsSince:       "2026-01-01",
+		MetricsUntil:       "2026-01-31",
+		MetricsGranularity: "day",
+		MetricsMetric:      "hits",
 	}); err != nil {
 		t.Fatal(err)
 	}
