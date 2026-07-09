@@ -68,6 +68,39 @@ func TestValidateOutputPropagatesAuthError(t *testing.T) {
 	}
 }
 
+func TestValidateOutputWithIncludeMetrics(t *testing.T) {
+	cfg := ExportConfig{
+		AuthConfig: AuthConfig{
+			AdminURL: "https://tenant.example.com",
+			Token:    "tok",
+		},
+		OutDir:         "./out",
+		IncludeMetrics: true,
+		MetricsSince:   "2026-01-01",
+		MetricsUntil:   "2026-01-31",
+	}
+	if err := cfg.ValidateOutput(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestValidateOutputWithIncludeMetricsInvalid(t *testing.T) {
+	cfg := ExportConfig{
+		AuthConfig: AuthConfig{
+			AdminURL: "https://tenant.example.com",
+			Token:    "tok",
+		},
+		OutDir:         "./out",
+		IncludeMetrics: true,
+		MetricsSince:   "2026-07-10",
+		MetricsUntil:   "2026-07-01",
+	}
+	err := cfg.ValidateOutput()
+	if !errors.Is(err, ErrInvalidMetricsDateRange) {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestLoadExportFromEnv(t *testing.T) {
 	t.Setenv("THREESCALE_ADMIN_URL", "https://tenant.example.com")
 	t.Setenv("THREESCALE_ACCESS_TOKEN", "secret")

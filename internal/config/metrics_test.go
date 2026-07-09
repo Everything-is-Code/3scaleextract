@@ -61,3 +61,21 @@ func TestValidateMetricsExplicitWindow(t *testing.T) {
 		t.Fatalf("window = %q..%q", since, until)
 	}
 }
+
+func TestResolvedMetricsDefaults(t *testing.T) {
+	cfg := ExportConfig{}
+	if got := cfg.ResolvedMetricsGranularity(); got != DefaultMetricsGranularity {
+		t.Fatalf("granularity = %q", got)
+	}
+	if got := cfg.ResolvedMetricsMetric(); got != DefaultMetricsMetric {
+		t.Fatalf("metric = %q", got)
+	}
+
+	cfg = ExportConfig{MetricsGranularity: "hour", MetricsMetric: "transactions"}
+	if got := cfg.ResolvedMetricsGranularity(); got != "hour" {
+		t.Fatalf("granularity = %q", got)
+	}
+	if got := cfg.ResolvedMetricsMetric(); got != "transactions" {
+		t.Fatalf("metric = %q", got)
+	}
+}

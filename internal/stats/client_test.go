@@ -100,3 +100,30 @@ func TestGetUsageRateLimitRetry(t *testing.T) {
 		t.Fatalf("invalid json: %s", raw)
 	}
 }
+
+func TestParseServiceID(t *testing.T) {
+	id, name, err := ParseServiceID(json.RawMessage(`{"service":{"id":99,"system_name":"payments"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != 99 || name != "payments" {
+		t.Fatalf("id=%d name=%q", id, name)
+	}
+	_, _, err = ParseServiceID(json.RawMessage(`{"service":{"system_name":"x"}}`))
+	if err == nil {
+		t.Fatal("expected error for missing id")
+	}
+}
+
+func TestFormatUsagePath(t *testing.T) {
+	if got := FormatUsagePath(7); got != "/services/7/usage.json" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestNormalizeAdminURLEmptyStats(t *testing.T) {
+	_, err := DeriveStatsBaseURL("")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
