@@ -30,7 +30,7 @@ func readAuthTypeFromYAML(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	spec, ok := productSpecFromYAML(data)
+	spec, ok := productSpecFromYAML(stripUTF8BOM(data))
 	if !ok {
 		return "", nil
 	}

@@ -25,6 +25,7 @@ func LoadExport(root string) (*Tenant, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read manifest.json: %w", err)
 	}
+	manifestData = stripUTF8BOM(manifestData)
 
 	var manifest output.Manifest
 	if err := json.Unmarshal(manifestData, &manifest); err != nil {
@@ -82,7 +83,7 @@ func loadBackends(dir string) ([]Backend, error) {
 		if err != nil {
 			return nil, fmt.Errorf("read backend %s: %w", entry.Name(), err)
 		}
-		backend, err := parseBackend(data)
+		backend, err := parseBackend(stripUTF8BOM(data))
 		if err != nil {
 			return nil, fmt.Errorf("parse backend %s: %w", entry.Name(), err)
 		}
@@ -153,7 +154,8 @@ func loadProduct(productsDir, systemName string) (Product, error) {
 	if displayName, err := readProductDisplayName(filepath.Join(productsDir, systemName+".yaml")); err == nil && displayName != "" {
 		product.DisplayName = displayName
 	} else if err != nil && !os.IsNotExist(err) {
-		return Product{}, err
+		// Product YAML may contain redacted values invalid for strict parsing; keep systemName.
+		_ = err
 	}
 
 	if err := readOptionalJSON(filepath.Join(productDir, "proxy.json"), func(data []byte) error {
@@ -218,7 +220,7 @@ func readProductDisplayName(path string) (string, error) {
 		return "", err
 	}
 	var doc productYAML
-	if err := yaml.Unmarshal(data, &doc); err != nil {
+	if err := yaml.Unmarshal(stripUTF8BOM(data), &doc); err != nil {
 		return "", err
 	}
 	if doc.Spec.Name != "" {
@@ -238,7 +240,11 @@ func readOptionalJSON(path string, fn func([]byte) error) error {
 	if len(data) == 0 {
 		return nil
 	}
-	return fn(data)
+	return fn(stripUTF8BOM(data))
+}
+
+func stripUTF8BOM(data []byte) []byte {
+	return bytes.TrimPrefix(data, []byte{0xEF, 0xBB, 0xBF})
 }
 
 func parseProxy(data []byte, product *Product) error {
@@ -474,7 +480,7 @@ func loadApplications(dir string) ([]Application, error) {
 		if err != nil {
 			return nil, fmt.Errorf("read applications %s: %w", entry.Name(), err)
 		}
-		pageApps, err := parseApplicationsPage(data)
+		pageApps, err := parseApplicationsPage(stripUTF8BOM(data))
 		if err != nil {
 			return nil, fmt.Errorf("parse applications %s: %w", entry.Name(), err)
 		}
