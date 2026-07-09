@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"testing"
 	"time"
 )
@@ -28,7 +29,7 @@ func TestResolveMetricsWindowInvalidRange(t *testing.T) {
 		MetricsUntil: "2026-07-01",
 	}
 	_, _, err := cfg.ResolveMetricsWindow()
-	if err != ErrInvalidMetricsDateRange {
+	if !errors.Is(err, ErrInvalidMetricsDateRange) {
 		t.Fatalf("err = %v, want ErrInvalidMetricsDateRange", err)
 	}
 }
