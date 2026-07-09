@@ -67,20 +67,26 @@ jobs:
           body: |
             ## What's new in v${{ steps.version.outputs.tag }}
 
+            ### threescale-export
+            - **Hit metrics export** — optional Analytics API traffic under `stats/` via `--include-metrics` on full export, or standalone `threescale-export metrics`
+            - **`stats/` layout** — `stats/query.json` plus `stats/products/{system_name}/hits.json` per product
+            - **Manifest metadata** — when metrics are enabled, `manifest.json` records query window and granularity (`schema_version` remains `1.0`)
+
+            Requires Enterprise tier and a PAT with **Analytics** scope.
+
             ### threescale-visualize
-            - **Products by domain** — `index.md` includes a domain summary table (count and percent). HTML and Cursor canvas add a **Show percentages** toggle on the domain pie chart; zero-count domains are omitted from the pie.
-            - **Enabled policies only** (since v0.3.1) — policy chains omit `enabled: false` and `apicast`; missing `enabled` is treated as enabled.
+            - See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md) for report layout and policy visibility.
 
-            ### threescale-export / threescale-seed
-            - No changes in this release.
+            ### threescale-seed
+            - No changes in this release unless noted in generated release notes below.
 
-            See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md) (domain summary and policy visibility sections).
+            See [README](https://github.com/${{ github.repository }}/blob/main/README.md#hit-metrics-analytics-api) for metrics flags and examples.
 
             ---
 
             ## Download
 
-            ### 1. Export a tenant
+            ### 1. Export a tenant (with metrics)
 
             ```bash
             tar xzf threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
@@ -92,7 +98,19 @@ jobs:
             ./threescale-export \
               --output ./export \
               --include-applications \
+              --include-metrics \
+              --metrics-since 2026-01-01 \
+              --metrics-until 2026-01-31 \
               --redact-secrets
+            ```
+
+            Metrics only:
+
+            ```bash
+            ./threescale-export metrics \
+              --output ./export \
+              --metrics-since 2026-01-01 \
+              --metrics-until 2026-01-31
             ```
 
             ### 2. Visualize (optional)
