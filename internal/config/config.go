@@ -24,10 +24,15 @@ type ExportConfig struct {
 	AuthConfig
 	OutDir              string
 	IncludeApplications bool
+	IncludeMetrics      bool
 	RedactSecrets       bool
 	Strict              bool
 	PerPage             int
 	MaxConcurrent       int
+	MetricsSince        string
+	MetricsUntil        string
+	MetricsGranularity  string
+	MetricsMetric       string
 	ToolboxImage        string
 	ToolboxRuntime      string
 	ToolboxNativeBinary string
@@ -73,6 +78,15 @@ func BindExportFlags(fs *pflag.FlagSet, cfg *ExportConfig) {
 	if cfg.ToolboxImage == "" {
 		cfg.ToolboxImage = export.DefaultToolboxImage
 	}
+	BindMetricsFlags(fs, cfg)
+}
+
+func BindMetricsFlags(fs *pflag.FlagSet, cfg *ExportConfig) {
+	fs.BoolVar(&cfg.IncludeMetrics, "include-metrics", cfg.IncludeMetrics, "export Analytics API hit traffic into stats/")
+	fs.StringVar(&cfg.MetricsSince, "metrics-since", cfg.MetricsSince, "metrics window start date (YYYY-MM-DD UTC; default 30 days before metrics-until)")
+	fs.StringVar(&cfg.MetricsUntil, "metrics-until", cfg.MetricsUntil, "metrics window end date (YYYY-MM-DD UTC; default today)")
+	fs.StringVar(&cfg.MetricsGranularity, "metrics-granularity", cfg.MetricsGranularity, "metrics granularity: day, hour, or month")
+	fs.StringVar(&cfg.MetricsMetric, "metrics-metric", cfg.MetricsMetric, "metric name for Analytics API usage (default hits)")
 }
 
 func NormalizeAdminURL(raw string) (string, error) {
