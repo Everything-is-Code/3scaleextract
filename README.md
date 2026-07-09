@@ -67,6 +67,9 @@ chmod +x threescale-export
 ./threescale-export \
   --output ./export \
   --include-applications \
+  --include-metrics \
+  --metrics-since 2026-01-01 \
+  --metrics-until 2026-01-31 \
   --redact-secrets
 ```
 
