@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/Everything-is-Code/3scaleextract/internal/config"
 )
 
 const (
@@ -55,7 +53,7 @@ type Options struct {
 }
 
 func DeriveStatsBaseURL(adminURL string) (string, error) {
-	normalized, err := config.NormalizeAdminURL(adminURL)
+	normalized, err := normalizeAdminURL(adminURL)
 	if err != nil {
 		return "", err
 	}
@@ -65,6 +63,18 @@ func DeriveStatsBaseURL(adminURL string) (string, error) {
 		return "", fmt.Errorf("invalid admin URL for stats derivation: %q", adminURL)
 	}
 	return base + "/stats", nil
+}
+
+func normalizeAdminURL(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	raw = strings.TrimRight(raw, "/")
+	if raw == "" {
+		return "", errors.New("admin URL is required")
+	}
+	if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
+		return "", fmt.Errorf("admin URL must start with http:// or https://: %q", raw)
+	}
+	return raw, nil
 }
 
 func NewClient(opts Options) (*HTTPClient, error) {

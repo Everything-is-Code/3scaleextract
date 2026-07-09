@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,10 +19,16 @@ type Options struct {
 	Token               string
 	OutDir              string
 	IncludeApplications bool
+	IncludeMetrics      bool
+	MetricsSince        string
+	MetricsUntil        string
+	MetricsGranularity  string
+	MetricsMetric       string
 	RedactSecrets       bool
 	Strict              bool
 	MaxConcurrent       int
 	PerPage             int
+	MetricsHTTPClient   *http.Client
 }
 
 type Exporter interface {
@@ -115,6 +123,31 @@ func (s *Service) Export(ctx context.Context, opts Options) (*output.Manifest, e
 			return manifest, err
 		}
 		manifest.ApplicationCount = count
+	}
+
+	if opts.IncludeMetrics {
+		since := strings.TrimSpace(opts.MetricsSince)
+		until := strings.TrimSpace(opts.MetricsUntil)
+		if since == "" || until == "" {
+			return manifest, fmt.Errorf("metrics since and until are required when include_metrics is set")
+		}
+		granularity := strings.TrimSpace(opts.MetricsGranularity)
+		if granularity == "" {
+			granularity = "day"
+		}
+		metricName := strings.TrimSpace(opts.MetricsMetric)
+		if metricName == "" {
+			metricName = "hits"
+		}
+		httpClient := opts.MetricsHTTPClient
+		if httpClient == nil {
+			httpClient = &http.Client{Timeout: 60 * time.Second}
+		}
+		if err := ExportMetrics(ctx, opts.AdminURL, opts.Token, httpClient, opts.MaxConcurrent, writer, services, since, until, granularity, metricName); err != nil {
+			manifest.Incomplete = true
+			return manifest, fmt.Errorf("export metrics: %w", err)
+		}
+		applyMetricsManifest(manifest, since, until, granularity, metricName)
 	}
 
 	if opts.RedactSecrets {

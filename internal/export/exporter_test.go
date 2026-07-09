@@ -3,6 +3,8 @@ package export
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -113,6 +115,57 @@ func TestExportDefaultScope(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(dir, "backends", "billing-backend.json")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExportIncludeMetrics(t *testing.T) {
+	statsSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/stats/services/10/usage.json" {
+			_, _ = w.Write([]byte(`{"periods":[{"since":"2026-01-01","until":"2026-01-02","values":{"hits":42}}]}`))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer statsSrv.Close()
+
+	dir := t.TempDir()
+	client := defaultScopeMockClient()
+	toolbox := &mockToolbox{outputs: map[string][]byte{"payments": []byte("apiVersion: v1\nkind: Product\n")}}
+
+	svc := NewService(client, toolbox)
+	manifest, err := svc.Export(context.Background(), Options{
+		AdminURL:           statsSrv.URL,
+		Token:              "tok",
+		OutDir:             dir,
+		IncludeMetrics:     true,
+		MetricsSince:       "2026-01-01",
+		MetricsUntil:       "2026-01-31",
+		MetricsGranularity: "day",
+		MetricsMetric:      "hits",
+		PerPage:            500,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !manifest.IncludeMetrics {
+		t.Fatal("expected include_metrics on manifest")
+	}
+	if manifest.MetricsSince != "2026-01-01" || manifest.MetricsUntil != "2026-01-31" {
+		t.Fatalf("metrics window = %q..%q", manifest.MetricsSince, manifest.MetricsUntil)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "stats", "query.json")); err != nil {
+		t.Fatal(err)
+	}
+	hitsPath := filepath.Join(dir, "stats", "products", "payments", "hits.json")
+	data, err := os.ReadFile(hitsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `"hits"`) || !strings.Contains(string(data), "42") {
+		t.Fatalf("unexpected hits payload: %s", data)
+	}
+	if err := VerifyExport(dir); err != nil {
 		t.Fatal(err)
 	}
 }

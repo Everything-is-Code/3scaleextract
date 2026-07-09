@@ -79,6 +79,53 @@ func VerifyExport(root string) error {
 		}
 	}
 
+	if manifest.IncludeMetrics {
+		if err := verifyStatsLayout(root, manifest); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func verifyStatsLayout(root string, manifest output.Manifest) error {
+	queryPath := filepath.Join(root, "stats", "query.json")
+	queryData, err := os.ReadFile(queryPath)
+	if err != nil {
+		return fmt.Errorf("missing stats/query.json: %w", err)
+	}
+
+	var query struct {
+		Since       string `json:"since"`
+		Until       string `json:"until"`
+		Granularity string `json:"granularity"`
+		MetricName  string `json:"metric_name"`
+	}
+	if err := json.Unmarshal(queryData, &query); err != nil {
+		return fmt.Errorf("parse stats/query.json: %w", err)
+	}
+
+	hits, err := filepath.Glob(filepath.Join(root, "stats", "products", "*", "hits.json"))
+	if err != nil {
+		return err
+	}
+	if manifest.ProductCount != len(hits) {
+		return fmt.Errorf("manifest product_count = %d, found %d stats/products/*/hits.json", manifest.ProductCount, len(hits))
+	}
+
+	if manifest.MetricsSince != "" && query.Since != manifest.MetricsSince {
+		return fmt.Errorf("manifest metrics_since = %q, stats/query.json since = %q", manifest.MetricsSince, query.Since)
+	}
+	if manifest.MetricsUntil != "" && query.Until != manifest.MetricsUntil {
+		return fmt.Errorf("manifest metrics_until = %q, stats/query.json until = %q", manifest.MetricsUntil, query.Until)
+	}
+	if manifest.MetricsGranularity != "" && query.Granularity != manifest.MetricsGranularity {
+		return fmt.Errorf("manifest metrics_granularity = %q, stats/query.json granularity = %q", manifest.MetricsGranularity, query.Granularity)
+	}
+	if manifest.MetricsMetric != "" && query.MetricName != manifest.MetricsMetric {
+		return fmt.Errorf("manifest metrics_metric = %q, stats/query.json metric_name = %q", manifest.MetricsMetric, query.MetricName)
+	}
+
 	return nil
 }
 

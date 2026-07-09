@@ -60,6 +60,9 @@ func (c ExportConfig) ValidateOutput() error {
 	if strings.TrimSpace(c.OutDir) == "" {
 		return errors.New("output directory is required: use --output")
 	}
+	if c.IncludeMetrics {
+		return c.ValidateMetrics()
+	}
 	return nil
 }
 

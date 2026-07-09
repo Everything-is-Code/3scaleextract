@@ -25,6 +25,21 @@ application plans, auth configuration, policy chains, and optionally application
 		},
 	}
 	config.BindExportFlags(cmd.Flags(), &cfg)
+
+	metricsCmd := &cobra.Command{
+		Use:   "metrics",
+		Short: "Export Analytics API hit traffic into stats/ only",
+		Long:  `List products from the Admin API and fetch Analytics API usage metrics into stats/ without running a full configuration export.`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return RunMetrics(cmd.Context(), cfg)
+		},
+	}
+	config.BindAuthFlags(metricsCmd.Flags(), &cfg.AuthConfig)
+	metricsCmd.Flags().StringVar(&cfg.OutDir, "output", cfg.OutDir, "export output directory")
+	metricsCmd.Flags().IntVar(&cfg.MaxConcurrent, "concurrency", cfg.MaxConcurrent, "max concurrent Analytics API requests")
+	config.BindMetricsFlags(metricsCmd.Flags(), &cfg)
+	cmd.AddCommand(metricsCmd)
+
 	cmd.Version = version.Version
 	return cmd
 }
@@ -58,11 +73,28 @@ func RunExport(ctx context.Context, cfg config.ExportConfig) error {
 		return err
 	}
 	exporter := export.NewService(client, tb)
+	metricsSince := cfg.MetricsSince
+	metricsUntil := cfg.MetricsUntil
+	metricsGranularity := cfg.ResolvedMetricsGranularity()
+	metricsMetric := cfg.ResolvedMetricsMetric()
+	if cfg.IncludeMetrics {
+		since, until, err := cfg.ResolveMetricsWindow()
+		if err != nil {
+			return err
+		}
+		metricsSince, metricsUntil = since, until
+	}
 	manifest, err := exporter.Export(ctx, export.Options{
 		AdminURL:            adminURL,
 		Token:               cfg.Token,
 		OutDir:              cfg.OutDir,
 		IncludeApplications: cfg.IncludeApplications,
+		IncludeMetrics:      cfg.IncludeMetrics,
+		MetricsSince:        metricsSince,
+		MetricsUntil:        metricsUntil,
+		MetricsGranularity:  metricsGranularity,
+		MetricsMetric:       metricsMetric,
+		MetricsHTTPClient:   config.NewHTTPClient(cfg.InsecureTLS, 60*time.Second),
 		RedactSecrets:       cfg.RedactSecrets,
 		Strict:              cfg.Strict,
 		MaxConcurrent:       cfg.MaxConcurrent,
