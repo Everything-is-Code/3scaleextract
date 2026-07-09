@@ -228,3 +228,33 @@ func copyExportTree(t *testing.T, src, dst string) {
 		t.Fatal(err)
 	}
 }
+
+func TestStripUTF8BOM(t *testing.T) {
+	raw := append([]byte{0xEF, 0xBB, 0xBF}, []byte(`{"proxy":{}}`)...)
+	got := stripUTF8BOM(raw)
+	if string(got) != `{"proxy":{}}` {
+		t.Fatalf("stripUTF8BOM() = %q", got)
+	}
+}
+
+func TestLoadExportWithUTF8BOM(t *testing.T) {
+	root := t.TempDir()
+	copyExportTree(t, filepath.Join("testdata", "export-minimal"), root)
+
+	proxyPath := filepath.Join(root, "products", "seed_alpha", "proxy.json")
+	data, err := os.ReadFile(proxyPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(proxyPath, append([]byte{0xEF, 0xBB, 0xBF}, data...), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	tenant, err := LoadExport(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tenant.Products) != 2 {
+		t.Fatalf("Products = %d, want 2", len(tenant.Products))
+	}
+}
