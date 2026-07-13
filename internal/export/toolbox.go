@@ -46,6 +46,8 @@ type ToolboxOptions struct {
 	NativeBinary string
 	// CertFile mounts a CA/cert for toolbox TLS (SSL_CERT_FILE in container).
 	CertFile string
+	// Insecure passes -k to toolbox to skip TLS verification (lab tenants).
+	Insecure bool
 	// CommandRunner overrides process execution (defaults to os/exec).
 	CommandRunner CommandRunner
 }
@@ -55,6 +57,7 @@ type Toolbox struct {
 	image        string
 	nativeBinary string
 	certFile     string
+	insecure     bool
 	runner       CommandRunner
 }
 
@@ -64,6 +67,7 @@ func NewToolbox(opts ToolboxOptions) (*Toolbox, error) {
 		image:        strings.TrimSpace(opts.Image),
 		nativeBinary: strings.TrimSpace(opts.NativeBinary),
 		certFile:     strings.TrimSpace(opts.CertFile),
+		insecure:     opts.Insecure,
 		runner:       opts.CommandRunner,
 	}
 	if t.runner == nil {
@@ -128,8 +132,7 @@ func buildRemoteURL(adminURL, token string) (string, error) {
 }
 
 func (t *Toolbox) runNative(ctx context.Context, remoteURL, systemName string) ([]byte, error) {
-	args := []string{"product", "export", remoteURL, systemName}
-	return t.runCommand(ctx, t.nativeBinary, args)
+	return t.runCommand(ctx, t.nativeBinary, t.toolboxProductArgs(remoteURL, systemName))
 }
 
 func (t *Toolbox) runContainer(ctx context.Context, remoteURL, systemName string) ([]byte, error) {
@@ -140,8 +143,18 @@ func (t *Toolbox) runContainer(ctx context.Context, remoteURL, systemName string
 			"-v", t.certFile+":/tmp/3scale-toolbox-cert.pem:ro",
 		)
 	}
-	args = append(args, t.image, "3scale", "product", "export", remoteURL, systemName)
+	args = append(args, t.image, "3scale")
+	args = append(args, t.toolboxProductArgs(remoteURL, systemName)...)
 	return t.runCommand(ctx, t.runtime, args)
+}
+
+func (t *Toolbox) toolboxProductArgs(remoteURL, systemName string) []string {
+	args := make([]string, 0, 5)
+	if t.insecure {
+		args = append(args, "-k")
+	}
+	args = append(args, "product", "export", remoteURL, systemName)
+	return args
 }
 
 func (t *Toolbox) runCommand(ctx context.Context, command string, args []string) ([]byte, error) {

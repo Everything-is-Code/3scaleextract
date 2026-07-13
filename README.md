@@ -92,12 +92,14 @@ The hybrid export combines:
 | `--redact-secrets` | Opt-in: mask sensitive keys in JSON/YAML artifacts (see [Redaction](#redaction) below) |
 | `--per-page` | Admin API page size (max 500) |
 | `--concurrency` | Concurrent requests (default 4) |
-| `--insecure` | Skip TLS verification on Admin API |
+| `--insecure` | Skip TLS verification on Admin API, Analytics API, and toolbox (`-k`) |
 | `--toolbox-image` | Toolbox image (default Red Hat 2.16) |
 | `--toolbox-runtime` | `docker` or `podman` (auto-detect if empty) |
 | `--toolbox-tls-cert` | CA certificate mounted in the toolbox container |
 
 Self-signed TLS (Admin Portal or toolbox):
+
+`--insecure` passes `-k` to the 3scale toolbox container/native binary so product YAML export also skips certificate verification. Alternatively, mount a custom CA with `--toolbox-tls-cert` without disabling verification.
 
 ```bash
 ./threescale-export \
