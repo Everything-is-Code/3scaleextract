@@ -68,19 +68,18 @@ jobs:
             ## What's new in v${{ steps.version.outputs.tag }}
 
             ### threescale-export
-            - **Hit metrics export** — optional Analytics API traffic under `stats/` via `--include-metrics` on full export, or standalone `threescale-export metrics`
-            - **`stats/` layout** — `stats/query.json` plus `stats/products/{system_name}/hits.json` per product
-            - **Manifest metadata** — when metrics are enabled, `manifest.json` records query window and granularity (`schema_version` remains `1.0`)
-
-            Requires Enterprise tier and a PAT with **Analytics** scope.
+            - **Hit metrics** — `--include-metrics` on full export or `threescale-export metrics` for `stats/` only (Enterprise + PAT Analytics scope)
+            - **Self-signed TLS** — `--insecure` skips verification for Admin API, Analytics API, and toolbox (`3scale -k`); optional `--toolbox-tls-cert` for CA pinning
+            - **`stats/` layout** — `stats/query.json` and `stats/products/{system_name}/hits.json` per product
 
             ### threescale-visualize
-            - See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md) for report layout and policy visibility.
+            - **Redacted / BOM exports** — strips UTF-8 BOM; loads exports with redacted product YAML without failing
+            - See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md) for report layout and policy visibility
 
             ### threescale-seed
             - No changes in this release unless noted in generated release notes below.
 
-            See [README](https://github.com/${{ github.repository }}/blob/main/README.md#hit-metrics-analytics-api) for metrics flags and examples.
+            See [README](https://github.com/${{ github.repository }}/blob/main/README.md) and [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for flags and release history.
 
             ---
 
@@ -101,7 +100,8 @@ jobs:
               --include-metrics \
               --metrics-since 2026-01-01 \
               --metrics-until 2026-01-31 \
-              --redact-secrets
+              --redact-secrets \
+              --insecure
             ```
 
             Metrics only:

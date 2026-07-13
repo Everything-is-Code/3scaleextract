@@ -255,6 +255,8 @@ git push origin v0.2.0
 
 GitHub Actions runs tests, builds `threescale-export`, `threescale-seed`, and `threescale-visualize` for Linux amd64, and publishes `.tar.gz` artifacts with checksums on [Releases](https://github.com/Everything-is-Code/3scaleextract/releases).
 
+See [CHANGELOG.md](CHANGELOG.md) for version history.
+
 ## Optional lab tools
 
 | Tool | Description |
