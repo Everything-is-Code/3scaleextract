@@ -188,7 +188,7 @@ Automation references are verified against the repository at the time of writing
 |-------|-------|
 | Priority | P2 |
 | CLI | `threescale-export` |
-| Automation | **manual** |
+| Automation | `TestRunContainerArgsInsecure`, `TestExportProductNativeInsecure` (`internal/export/toolbox_test.go`); lab validation **manual** |
 
 **Preconditions**
 
@@ -197,7 +197,7 @@ Automation references are verified against the repository at the time of writing
 
 **Steps**
 
-1. Export with `--insecure` for Admin API TLS, and/or set `THREESCALE_TOOLBOX_TLS_CERT` for toolbox container TLS
+1. Export with `--insecure` (Admin API, Analytics API, and toolbox `-k`), and/or set `THREESCALE_TOOLBOX_TLS_CERT` for CA pinning without full skip
 2. For integration CI: set repository secret `THREESCALE_INSECURE_TLS=true`
 
 **Expected results**

@@ -151,6 +151,34 @@ func TestRunContainerArgs(t *testing.T) {
 	}
 }
 
+func TestRunContainerArgsInsecure(t *testing.T) {
+	var captured []string
+	runner := &mockCommandRunner{
+		fn: func(_ string, args []string) ([]byte, []byte, error) {
+			captured = append([]string(nil), args...)
+			return []byte("apiVersion: v1\n"), nil, nil
+		},
+	}
+	tb := &Toolbox{
+		runtime:  "podman",
+		image:    DefaultToolboxImage,
+		insecure: true,
+		runner:   runner,
+	}
+	if _, err := tb.ExportProduct(context.Background(), "https://admin.example.com", "tok", "payments"); err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(captured, " ")
+	if !strings.Contains(joined, " -k ") && !strings.HasSuffix(joined, " -k") {
+		for i, arg := range captured {
+			if arg == "-k" && i+1 < len(captured) && captured[i+1] == "product" {
+				return
+			}
+		}
+		t.Fatalf("args missing -k before product: %v", captured)
+	}
+}
+
 func TestExportProductNativeUsesRunner(t *testing.T) {
 	var captured struct {
 		command string
@@ -175,6 +203,27 @@ func TestExportProductNativeUsesRunner(t *testing.T) {
 	}
 	if len(captured.args) != 4 || captured.args[0] != "product" || captured.args[3] != "demo_api" {
 		t.Fatalf("args = %v", captured.args)
+	}
+}
+
+func TestExportProductNativeInsecure(t *testing.T) {
+	var captured []string
+	runner := &mockCommandRunner{
+		fn: func(_ string, args []string) ([]byte, []byte, error) {
+			captured = append([]string(nil), args...)
+			return []byte("kind: Product\n"), nil, nil
+		},
+	}
+	tb := &Toolbox{
+		nativeBinary: "/usr/bin/3scale",
+		insecure:     true,
+		runner:       runner,
+	}
+	if _, err := tb.ExportProduct(context.Background(), "https://tenant.example.com", "secret", "demo_api"); err != nil {
+		t.Fatal(err)
+	}
+	if len(captured) != 5 || captured[0] != "-k" || captured[1] != "product" || captured[4] != "demo_api" {
+		t.Fatalf("args = %v", captured)
 	}
 }
 

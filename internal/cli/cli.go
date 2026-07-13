@@ -68,6 +68,7 @@ func RunExport(ctx context.Context, cfg config.ExportConfig) error {
 		Image:        cfg.ToolboxImage,
 		NativeBinary: cfg.ToolboxNativeBinary,
 		CertFile:     cfg.ToolboxCertFile,
+		Insecure:     cfg.InsecureTLS,
 	})
 	if err != nil {
 		return err
