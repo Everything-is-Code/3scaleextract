@@ -97,11 +97,10 @@ func BuildTopologyData(tenant *Tenant) TopologyData {
 		products = append(products, product)
 	}
 
-	var shared []TopologyShared
+	// Include every referenced backend (including 1:1 product→backend links).
+	// Sort by product count so true multi-product sharing still ranks first.
+	shared := make([]TopologyShared, 0, len(refs))
 	for backend, ps := range refs {
-		if len(ps) < 2 {
-			continue
-		}
 		names := make([]string, 0, len(ps))
 		for name := range ps {
 			names = append(names, name)
@@ -123,9 +122,6 @@ func BuildTopologyData(tenant *Tenant) TopologyData {
 		}
 		return shared[i].Backend < shared[j].Backend
 	})
-	if len(shared) > 12 {
-		shared = shared[:12]
-	}
 
 	catCounts := map[string]int{"I": 0, "B": 0, "S": 0, "P": 0}
 	for _, p := range products {

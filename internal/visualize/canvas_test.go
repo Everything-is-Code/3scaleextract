@@ -49,6 +49,60 @@ func TestBuildTopologyDataFromMinimalFixture(t *testing.T) {
 	}
 }
 
+func TestBuildTopologyDataEmptySharedMarshalsAsArray(t *testing.T) {
+	tenant, err := LoadExport(filepath.Join("testdata", "export-minimal"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range tenant.Products {
+		tenant.Products[i].BackendUsages = nil
+	}
+	data := BuildTopologyData(tenant)
+	if data.Shared == nil {
+		t.Fatal("Shared should be empty slice, not nil")
+	}
+	raw, err := json.Marshal(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), `"shared":null`) {
+		t.Fatalf("shared must marshal as [], got null in %s", raw)
+	}
+	if !strings.Contains(string(raw), `"shared":[]`) {
+		t.Fatalf("shared must marshal as [], payload=%s", raw)
+	}
+}
+
+func TestBuildTopologyDataIncludesOneToOneBackends(t *testing.T) {
+	tenant, err := LoadExport(filepath.Join("testdata", "export-minimal"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := BuildTopologyData(tenant)
+
+	byBackend := map[string]TopologyShared{}
+	for _, s := range data.Shared {
+		byBackend[s.Backend] = s
+	}
+	oneToOne, ok := byBackend["billing_api"]
+	if !ok {
+		t.Fatal("billing_api (1:1) missing from Shared")
+	}
+	if oneToOne.Count != 1 {
+		t.Fatalf("billing_api count = %d, want 1", oneToOne.Count)
+	}
+	shared, ok := byBackend["shared_payments"]
+	if !ok {
+		t.Fatal("shared_payments missing from Shared")
+	}
+	if shared.Count != 2 {
+		t.Fatalf("shared_payments count = %d, want 2", shared.Count)
+	}
+	if data.Shared[0].Backend != "shared_payments" {
+		t.Fatalf("first Shared = %q, want shared_payments (highest count first)", data.Shared[0].Backend)
+	}
+}
+
 func TestWriteCanvasTSXFromMinimalFixture(t *testing.T) {
 	tenant, err := LoadExport(filepath.Join("testdata", "export-minimal"))
 	if err != nil {
@@ -72,7 +126,7 @@ func TestWriteCanvasTSXFromMinimalFixture(t *testing.T) {
 	if !json.Valid([]byte(payload)) {
 		t.Fatal("embedded canvas DATA is not valid JSON")
 	}
-	for _, want := range []string{"TopologyCanvas", "seed_alpha", "cursor/canvas", "Policy names", "domainShowPercent", "Toggle", "Show percentages"} {
+	for _, want := range []string{"TopologyCanvas", "seed_alpha", "cursor/canvas", "Policy names", "domainShowPercent", "Toggle", "Show percentages", "Most referenced backends", "Backend usage detail"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("missing %q in canvas output", want)
 		}

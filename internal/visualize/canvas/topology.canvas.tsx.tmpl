@@ -406,10 +406,11 @@ export default function TopologyCanvas() {
     return `${label}: ${count} (${pct}%)`;
   };
 
-  const sharedCategories = DATA.shared.map((s) =>
+  const shared = DATA.shared ?? [];
+  const sharedCategories = shared.map((s) =>
     s.b.length > 18 ? `${s.b.slice(0, 16)}…` : s.b,
   );
-  const sharedValues = DATA.shared.map((s) => s.n);
+  const sharedValues = shared.map((s) => s.n);
 
   return (
     <Stack gap={24} style={{ padding: 24, maxWidth: 1400 }}>
@@ -459,7 +460,7 @@ export default function TopologyCanvas() {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader>Most shared backends</CardHeader>
+          <CardHeader>Most referenced backends</CardHeader>
           <CardBody>
             <BarChart
               categories={sharedCategories}
@@ -468,7 +469,7 @@ export default function TopologyCanvas() {
               height={Math.max(220, sharedCategories.length * 28)}
             />
             <Text tone="tertiary" size="small">
-              Backends used by more than one API product
+              Backends ranked by number of API products (includes 1:1)
             </Text>
           </CardBody>
         </Card>
@@ -566,15 +567,15 @@ export default function TopologyCanvas() {
         </Stack>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Shared backend detail" count={DATA.shared.length}>
+      <CollapsibleSection title="Backend usage detail" count={shared.length}>
         <Stack gap={12}>
-          {DATA.shared.map((s) => (
+          {shared.map((s) => (
             <div key={s.b}>
               <Card variant="borderless">
                 <CardBody>
                   <Text weight="medium">{s.b}</Text>
                   <Text tone="secondary" size="small">
-                    Referenced by {s.n} products: {s.p.join(", ")}
+                    Referenced by {s.n} product{s.n === 1 ? "" : "s"}: {s.p.join(", ")}
                     {s.n > s.p.length ? " …" : ""}
                   </Text>
                 </CardBody>

@@ -124,9 +124,9 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-header">Most shared backends</div>
+        <div class="card-header">Most referenced backends</div>
         <div class="card-body"><canvas id="barChart"></canvas>
-          <p class="card-caption">Backends used by more than one API product</p>
+          <p class="card-caption">Backends ranked by number of API products (includes 1:1)</p>
         </div>
       </div>
     </div>
@@ -164,7 +164,7 @@
     </details>
 
     <details style="margin-top:16px">
-      <summary>Shared backend detail (<span id="sharedCount">0</span>)</summary>
+      <summary>Backend usage detail (<span id="sharedCount">0</span>)</summary>
       <div class="card-body" id="sharedList"></div>
     </details>
   </div>
@@ -280,12 +280,13 @@
           },
         },
       });
-      const labels = DATA.shared.map((s) => s.b.length > 18 ? s.b.slice(0, 16) + "…" : s.b);
+      const shared = DATA.shared ?? [];
+      const labels = shared.map((s) => s.b.length > 18 ? s.b.slice(0, 16) + "…" : s.b);
       new Chart(document.getElementById("barChart"), {
         type: "bar",
         data: {
           labels,
-          datasets: [{ label: "Products referencing", data: DATA.shared.map((s) => s.n) }],
+          datasets: [{ label: "Products referencing", data: shared.map((s) => s.n) }],
         },
         options: {
           indexAxis: "y",
@@ -414,9 +415,10 @@
     }
 
     function renderShared() {
-      document.getElementById("sharedCount").textContent = DATA.shared.length;
-      document.getElementById("sharedList").innerHTML = DATA.shared.map((s) =>
-        `<div class="shared-item"><div class="shared-title">${esc(s.b)}</div><div class="shared-detail">Referenced by ${s.n} products: ${esc(s.p.join(", "))}${s.n > s.p.length ? " …" : ""}</div></div>`
+      const shared = DATA.shared ?? [];
+      document.getElementById("sharedCount").textContent = shared.length;
+      document.getElementById("sharedList").innerHTML = shared.map((s) =>
+        `<div class="shared-item"><div class="shared-title">${esc(s.b)}</div><div class="shared-detail">Referenced by ${s.n} product${s.n === 1 ? "" : "s"}: ${esc(s.p.join(", "))}${s.n > s.p.length ? " …" : ""}</div></div>`
       ).join("");
     }
 
