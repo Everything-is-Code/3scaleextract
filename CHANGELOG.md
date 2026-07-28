@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-07-28
+
+### Fixed
+
+- **threescale-visualize** — Topology HTML/canvas no longer crash when no backends are shared across products (`shared` marshals as `[]` instead of `null`).
+- **threescale-visualize** — Backend usage ranking includes 1:1 product→backend links (not only multi-product shares); UI labels updated to “Most referenced backends” / “Backend usage detail”.
+
 ## [0.4.1] - 2026-07-13
 
 ### Fixed
@@ -43,7 +50,8 @@ Requires Enterprise tier and a PAT with **Analytics** scope.
 
 - **threescale-visualize** — Policy chains show enabled user policies only (omit `enabled: false` and `apicast`).
 
-[Unreleased]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.3.1...v0.3.2

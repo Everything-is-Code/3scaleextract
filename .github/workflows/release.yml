@@ -73,6 +73,7 @@ jobs:
             - **`stats/` layout** — `stats/query.json` and `stats/products/{system_name}/hits.json` per product
 
             ### threescale-visualize
+            - **Backend usage ranking** — includes 1:1 product→backend links; empty shared list no longer breaks the HTML/canvas dashboard (`shared: []`)
             - **Redacted / BOM exports** — strips UTF-8 BOM; loads exports with redacted product YAML without failing
             - See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md) for report layout and policy visibility
 
