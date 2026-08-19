@@ -82,6 +82,7 @@ bin/threescale-seed --skip-existing
 | `--skip-existing` | Skip resources already present by `system_name` (default: `true`) |
 | `--dry-run` | Print fixtures without calling Admin API |
 | `--list-fixtures` | Print coverage matrix and exit |
+| `--fixtures PATH` | Load external YAML catalog (overrides built-in fixtures) |
 | `--admin-url`, `--token`, `--insecure` | Credentials (or `THREESCALE_*` env vars) |
 
 ### OIDC behavior on re-run
@@ -119,3 +120,14 @@ Shares HTTP client with the exporter (`internal/admin`, `internal/config`).
 ```bash
 go test ./internal/seed/...
 ```
+
+
+## External catalogs
+
+Load a YAML catalog from another repo (e.g. RHCL migration toolkit conversion cases):
+
+```bash
+bin/threescale-seed --fixtures /path/to/migration-toolkit-rhcl/testdata/seed/catalog.yaml --skip-existing
+```
+
+See `migration-toolkit-rhcl/testdata/seed/README.md` for the one-product-per-policy suite.
