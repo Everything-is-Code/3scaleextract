@@ -19,6 +19,7 @@ func NewRoot() *cobra.Command {
 	skipExisting := true
 	dryRun := false
 	listFixtures := false
+	fixturesPath := ""
 
 	cmd := &cobra.Command{
 		Use:   "threescale-seed",
@@ -26,28 +27,36 @@ func NewRoot() *cobra.Command {
 		Long: `Optional lab/demo tool — loads sample backends, products, plans, policies,
 and applications into a 3scale tenant via Admin API.
 
-See docs/SEED.md for fixtures, OIDC setup, and the demo seed-and-export script.`,
+Pass --fixtures to load an external YAML catalog (e.g. migration-toolkit-rhcl
+testdata/seed/catalog.yaml). See docs/SEED.md for built-in fixtures.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if listFixtures {
-				return printFixtures()
+				return printFixtures(fixturesPath)
 			}
-			return RunSeed(cmd.Context(), cfg, skipExisting, dryRun)
+			return RunSeed(cmd.Context(), cfg, skipExisting, dryRun, fixturesPath)
 		},
 	}
 	config.BindAuthFlags(cmd.Flags(), &cfg)
 	cmd.Flags().BoolVar(&skipExisting, "skip-existing", true, "skip resources that already exist (by system_name)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "validate fixture plan without calling Admin API")
 	cmd.Flags().BoolVar(&listFixtures, "list-fixtures", false, "show fixture coverage matrix and exit")
+	cmd.Flags().StringVar(&fixturesPath, "fixtures", "", "path to external YAML fixture catalog (overrides built-in defaults)")
 	cmd.Version = version.Version
 	return cmd
 }
 
-func RunSeed(ctx context.Context, cfg config.AuthConfig, skipExisting, dryRun bool) error {
+func RunSeed(ctx context.Context, cfg config.AuthConfig, skipExisting, dryRun bool, fixturesPath string) error {
+	backends, account, products, coverage, err := loadFixtureSet(fixturesPath)
+	if err != nil {
+		return err
+	}
+
 	if dryRun {
-		if err := printFixtures(); err != nil {
+		if err := printFixtureSet(backends, account, products, coverage); err != nil {
 			return err
 		}
 		fmt.Println("\n(dry-run: no Admin API calls)")
+		return nil
 	}
 
 	if err := cfg.ValidateAuth(); err != nil {
@@ -70,7 +79,7 @@ func RunSeed(ctx context.Context, cfg config.AuthConfig, skipExisting, dryRun bo
 	result, err := seed.NewSeeder(client, seed.Options{
 		SkipExisting: skipExisting,
 		DryRun:       dryRun,
-	}).Run(ctx)
+	}).RunFixtures(ctx, backends, account, products)
 	if err != nil {
 		return err
 	}
@@ -80,8 +89,23 @@ func RunSeed(ctx context.Context, cfg config.AuthConfig, skipExisting, dryRun bo
 	return nil
 }
 
-func printFixtures() error {
-	backends, account, products := seed.DefaultFixtures()
+func loadFixtureSet(fixturesPath string) ([]seed.BackendFixture, seed.AccountFixture, []seed.ProductFixture, map[string][]string, error) {
+	if fixturesPath == "" {
+		backends, account, products := seed.DefaultFixtures()
+		return backends, account, products, seed.CoverageMatrix, nil
+	}
+	return seed.LoadFixturesFile(fixturesPath)
+}
+
+func printFixtures(fixturesPath string) error {
+	backends, account, products, coverage, err := loadFixtureSet(fixturesPath)
+	if err != nil {
+		return err
+	}
+	return printFixtureSet(backends, account, products, coverage)
+}
+
+func printFixtureSet(backends []seed.BackendFixture, account seed.AccountFixture, products []seed.ProductFixture, coverage map[string][]string) error {
 	fmt.Println("=== Seed fixtures ===")
 	fmt.Printf("Account: %s (%s)\n\n", account.Username, account.Email)
 	fmt.Printf("Backends (%d):\n", len(backends))
@@ -91,10 +115,12 @@ func printFixtures() error {
 	fmt.Printf("\nProducts (%d):\n", len(products))
 	for _, p := range products {
 		fmt.Printf("  - %s [%s]\n", p.SystemName, p.AuthMode)
-		if cov, ok := seed.CoverageMatrix[p.SystemName]; ok {
+		if cov, ok := coverage[p.SystemName]; ok {
 			for _, item := range cov {
 				fmt.Printf("      • %s\n", item)
 			}
+		} else if len(p.PolicyNames) > 0 {
+			fmt.Printf("      • policies: %v\n", p.PolicyNames)
 		}
 	}
 	return nil

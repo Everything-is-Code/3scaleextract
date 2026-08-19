@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-08-19
+
+### Added
+
+- **threescale-seed** — `--fixtures PATH` loads an external YAML catalog (e.g. migration-toolkit-rhcl `testdata/seed/catalog.yaml`) instead of built-in fixtures.
+- **threescale-seed** — Policy default configs for RHCL conversion demos: `logging`, `default_credentials`, `caching` / `3scale_auth_caching`, `payload_limits` / `content_limits`, `retry`, `keycloak_role_check`, `upstream_connection`, `headers`, `header_modification`, `token_introspection`, `edge_limiting`.
+
+### Changed
+
+- **threescale-seed** — `url_rewriting` seed config uses APIcast `commands` (regex/replace) instead of legacy `rules`, matching RHCL conversion input.
+- **threescale-seed** — `jwt_claim_check` seed config includes explicit `op` / `jwt_claim_type` fields.
+- Docs: `docs/SEED.md` documents `--fixtures`.
+
 ## [0.4.2] - 2026-07-28
 
 ### Fixed
@@ -50,7 +63,8 @@ Requires Enterprise tier and a PAT with **Analytics** scope.
 
 - **threescale-visualize** — Policy chains show enabled user policies only (omit `enabled: false` and `apicast`).
 
-[Unreleased]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.3.2...v0.4.0

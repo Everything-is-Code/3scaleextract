@@ -1,0 +1,77 @@
+# Minimal catalog for unit tests (not a full RHCL lab set).
+account:
+  org_name: Seed Test Org
+  username: seed_test_user
+  email: seed-test@example.com
+  password: SeedTestPass123!
+
+backends:
+  - system_name: test_upstream
+    name: Test Upstream
+    private_endpoint: "https://httpbin.org:443"
+    description: Unit-test backend
+
+products:
+  - system_name: test_cors
+    name: Test CORS
+    description: CORS-only fixture for LoadFixturesFile
+    auth_mode: api_key
+    backend_refs: [test_upstream]
+    policy_names: [cors]
+    plans:
+      - system_name: basic
+        name: Basic
+        limit_value: 1000
+    applications:
+      - name: test-cors-app
+        plan: basic
+    coverage:
+      - "policy: cors"
+
+  - system_name: test_edge_limiting
+    name: Test Edge Limiting
+    description: edge_limiting fixture for LoadFixturesFile
+    auth_mode: api_key
+    backend_refs: [test_upstream]
+    policy_names: [edge_limiting]
+    plans:
+      - system_name: basic
+        name: Basic
+        limit_value: 500
+    applications:
+      - name: test-edge-app
+        plan: basic
+    coverage:
+      - "policy: edge_limiting"
+
+  - system_name: test_retry
+    name: Test Retry
+    description: retry fixture for LoadFixturesFile
+    auth_mode: api_key
+    backend_refs: [test_upstream]
+    policy_names: [retry]
+    plans:
+      - system_name: basic
+        name: Basic
+        limit_value: 1000
+    applications:
+      - name: test-retry-app
+        plan: basic
+    coverage:
+      - "policy: retry"
+
+  - system_name: test_multi_backend
+    name: Test Multi Backend
+    description: multi-backend fixture for LoadFixturesFile
+    auth_mode: api_key
+    backend_refs: [test_upstream]
+    policy_names: []
+    plans:
+      - system_name: basic
+        name: Basic
+        limit_value: 1000
+    applications:
+      - name: test-multi-app
+        plan: basic
+    coverage:
+      - "backends: multi"

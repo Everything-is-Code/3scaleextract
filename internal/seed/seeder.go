@@ -34,6 +34,11 @@ func NewSeeder(client admin.Client, opts Options) *Seeder {
 
 func (s *Seeder) Run(ctx context.Context) (*Result, error) {
 	backends, account, products := DefaultFixtures()
+	return s.RunFixtures(ctx, backends, account, products)
+}
+
+// RunFixtures seeds the provided fixture set (built-in or loaded from YAML).
+func (s *Seeder) RunFixtures(ctx context.Context, backends []BackendFixture, account AccountFixture, products []ProductFixture) (*Result, error) {
 	result := &Result{
 		Backends: make(map[string]int),
 		Services: make(map[string]int),
