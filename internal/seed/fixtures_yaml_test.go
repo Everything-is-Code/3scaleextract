@@ -1,11 +1,18 @@
 package seed
 
 import (
+	"path/filepath"
+	"runtime"
 	"testing"
 )
 
-func TestLoadFixturesFile_rhclCatalog(t *testing.T) {
-	const path = "/home/fmeneses/Documents/demos/migration-toolkit-rhcl/testdata/seed/catalog.yaml"
+func TestLoadFixturesFile_sampleCatalog(t *testing.T) {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	path := filepath.Join(filepath.Dir(thisFile), "testdata", "sample-catalog.yaml")
+
 	backends, account, products, coverage, err := LoadFixturesFile(path)
 	if err != nil {
 		t.Fatalf("LoadFixturesFile: %v", err)
@@ -16,17 +23,17 @@ func TestLoadFixturesFile_rhclCatalog(t *testing.T) {
 	if len(backends) < 1 {
 		t.Fatalf("backends=%d want >= 1", len(backends))
 	}
-	if len(products) < 18 {
-		t.Fatalf("products=%d want >= 18", len(products))
+	if len(products) < 4 {
+		t.Fatalf("products=%d want >= 4", len(products))
 	}
-	if coverage["rhcl_seed_cors"] == nil {
-		t.Fatal("missing rhcl_seed_cors coverage")
+	if coverage["test_cors"] == nil {
+		t.Fatal("missing test_cors coverage")
 	}
 	foundEdge := false
 	foundRetry := false
 	foundMulti := false
 	for _, p := range products {
-		if p.SystemName == "rhcl_seed_multi_backend" {
+		if p.SystemName == "test_multi_backend" {
 			foundMulti = true
 		}
 		for _, name := range p.PolicyNames {
@@ -45,6 +52,6 @@ func TestLoadFixturesFile_rhclCatalog(t *testing.T) {
 		t.Fatal("expected retry product in catalog")
 	}
 	if !foundMulti {
-		t.Fatal("expected rhcl_seed_multi_backend product in catalog")
+		t.Fatal("expected test_multi_backend product in catalog")
 	}
 }
