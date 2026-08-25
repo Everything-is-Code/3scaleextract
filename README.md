@@ -96,6 +96,10 @@ The hybrid export combines:
 | `--toolbox-image` | Toolbox image (default Red Hat 2.16) |
 | `--toolbox-runtime` | `docker` or `podman` (auto-detect if empty) |
 | `--toolbox-tls-cert` | CA certificate mounted in the toolbox container |
+| `--quiet` | Suppress progress output on stderr |
+| `--verbose` | Show detailed progress (e.g. toolbox invocations; credentials redacted) |
+
+Progress is written to **stderr** by default: phase banners, `[i/n]` per API product, live warnings for skipped sidecars, and a completion summary. Use `--quiet` in scripts or CI.
 
 Self-signed TLS (Admin Portal or toolbox):
 

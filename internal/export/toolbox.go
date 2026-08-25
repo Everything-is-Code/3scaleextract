@@ -50,6 +50,8 @@ type ToolboxOptions struct {
 	Insecure bool
 	// CommandRunner overrides process execution (defaults to os/exec).
 	CommandRunner CommandRunner
+	// OnVerbose logs toolbox invocations when set (credentials are redacted).
+	OnVerbose func(string)
 }
 
 type Toolbox struct {
@@ -59,6 +61,7 @@ type Toolbox struct {
 	certFile     string
 	insecure     bool
 	runner       CommandRunner
+	onVerbose    func(string)
 }
 
 func NewToolbox(opts ToolboxOptions) (*Toolbox, error) {
@@ -69,6 +72,7 @@ func NewToolbox(opts ToolboxOptions) (*Toolbox, error) {
 		certFile:     strings.TrimSpace(opts.CertFile),
 		insecure:     opts.Insecure,
 		runner:       opts.CommandRunner,
+		onVerbose:    opts.OnVerbose,
 	}
 	if t.runner == nil {
 		t.runner = execCommandRunner{}
@@ -158,6 +162,9 @@ func (t *Toolbox) toolboxProductArgs(remoteURL, systemName string) []string {
 }
 
 func (t *Toolbox) runCommand(ctx context.Context, command string, args []string) ([]byte, error) {
+	if t.onVerbose != nil {
+		t.onVerbose(fmt.Sprintf("toolbox: %s %s", command, strings.Join(redactToolboxArgs(args), " ")))
+	}
 	stdout, stderr, err := t.runner.Run(ctx, command, args)
 	if err != nil {
 		msg := strings.TrimSpace(string(stderr))
@@ -172,4 +179,19 @@ func (t *Toolbox) runCommand(ctx context.Context, command string, args []string)
 		return nil, fmt.Errorf("%w: empty output from %s", ErrToolboxFailed, command)
 	}
 	return out, nil
+}
+
+func redactToolboxArgs(args []string) []string {
+	out := make([]string, len(args))
+	for i, arg := range args {
+		if strings.Contains(arg, "://") && strings.Contains(arg, "@") {
+			u, err := url.Parse(arg)
+			if err == nil && u.User != nil {
+				u.User = url.UserPassword("REDACTED", "REDACTED")
+				arg = u.String()
+			}
+		}
+		out[i] = arg
+	}
+	return out
 }

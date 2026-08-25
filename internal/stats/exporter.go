@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Everything-is-Code/3scaleextract/internal/output"
+	"github.com/Everything-is-Code/3scaleextract/internal/progress"
 )
 
 type ProductRef struct {
@@ -20,6 +22,7 @@ type ExportOptions struct {
 	Granularity   string
 	MetricName    string
 	MaxConcurrent int
+	Reporter      progress.Reporter
 }
 
 type QueryMeta struct {
@@ -62,9 +65,12 @@ func Export(ctx context.Context, client Client, writer *output.Writer, products 
 	if maxConcurrent <= 0 {
 		maxConcurrent = 1
 	}
+	rep := progress.OrNop(opts.Reporter)
 	sem := make(chan struct{}, maxConcurrent)
 	var wg sync.WaitGroup
 	errCh := make(chan error, len(products))
+	var completed atomic.Int32
+	total := len(products)
 
 	for _, product := range products {
 		wg.Add(1)
@@ -81,7 +87,10 @@ func Export(ctx context.Context, client Client, writer *output.Writer, products 
 			rel := fmt.Sprintf("stats/products/%s/hits.json", p.SystemName)
 			if err := writer.WriteRawJSON(rel, raw); err != nil {
 				errCh <- fmt.Errorf("product %q: write hits: %w", p.SystemName, err)
+				return
 			}
+			n := int(completed.Add(1))
+			rep.Item(n, total, p.SystemName)
 		}(product)
 	}
 

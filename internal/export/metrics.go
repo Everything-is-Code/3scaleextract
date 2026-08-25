@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Everything-is-Code/3scaleextract/internal/output"
+	"github.com/Everything-is-Code/3scaleextract/internal/progress"
 	"github.com/Everything-is-Code/3scaleextract/internal/stats"
 )
 
@@ -22,6 +23,7 @@ func ExportMetrics(
 	writer *output.Writer,
 	services []serviceRef,
 	since, until, granularity, metricName string,
+	rep progress.Reporter,
 ) error {
 	statsBase, err := stats.DeriveStatsBaseURL(adminURL)
 	if err != nil {
@@ -50,6 +52,7 @@ func ExportMetrics(
 		Granularity:   granularity,
 		MetricName:    metricName,
 		MaxConcurrent: maxConcurrent,
+		Reporter:      rep,
 	})
 	return err
 }

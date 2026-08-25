@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-08-25
+
+### Added
+
+- **threescale-export** — Progress output on stderr during export: phase banners, per-product `[i/n]` lines, live warnings for skipped sidecars, and a completion summary. Flags: `--quiet` (suppress progress) and `--verbose` (toolbox invocation details with redacted credentials). The `metrics` subcommand uses the same progress reporting.
+
 ## [0.4.3] - 2026-08-19
 
 ### Added
@@ -63,7 +69,8 @@ Requires Enterprise tier and a PAT with **Analytics** scope.
 
 - **threescale-visualize** — Policy chains show enabled user policies only (omit `enabled: false` and `apicast`).
 
-[Unreleased]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.4...HEAD
+[0.4.4]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Everything-is-Code/3scaleextract/compare/v0.4.0...v0.4.1

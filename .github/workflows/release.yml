@@ -68,6 +68,7 @@ jobs:
             ## What's new in v${{ steps.version.outputs.tag }}
 
             ### threescale-export
+            - **Progress** — stderr phase banners, per-product `[i/n]` lines, live sidecar warnings, completion summary; `--quiet` / `--verbose` (toolbox args redacted)
             - **Hit metrics** — `--include-metrics` on full export or `threescale-export metrics` for `stats/` only (Enterprise + PAT Analytics scope)
             - **Self-signed TLS** — `--insecure` skips verification for Admin API, Analytics API, and toolbox (`3scale -k`); optional `--toolbox-tls-cert` for CA pinning
             - **`stats/` layout** — `stats/query.json` and `stats/products/{system_name}/hits.json` per product
