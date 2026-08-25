@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/Everything-is-Code/3scaleextract/internal/admin"
+	"github.com/Everything-is-Code/3scaleextract/internal/progress"
 )
 
 type mockClient struct {
@@ -494,5 +495,47 @@ func TestExportRecordsWarningsOnSkippedSidecars(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "products", "payments", "oidc_configuration.json")); !os.IsNotExist(err) {
 		t.Fatalf("oidc_configuration.json should be absent: %v", err)
+	}
+}
+
+func TestExportReporterWarnings(t *testing.T) {
+	dir := t.TempDir()
+	client := &mockClient{
+		responses: map[string]any{
+			"/services": serviceListResponse{
+				Services: []serviceEntry{{Service: serviceRef{ID: 10, SystemName: "payments"}}},
+			},
+			"/backend_apis": backendListResponse{},
+			"/policies":     map[string]any{},
+			"/services/10/proxy": map[string]any{
+				"proxy": map[string]any{"auth_type": "oidc"},
+			},
+			"/services/10/proxy/policies":    map[string]any{"policies": []any{}},
+			"/services/10/application_plans": map[string]any{"plans": []any{}},
+			"/services/10/backend_usages":    map[string]any{"backend_usages": []any{}},
+			"/services/10/metrics":           map[string]any{"metrics": []any{}},
+		},
+	}
+	toolbox := &mockToolbox{outputs: map[string][]byte{"payments": []byte("apiVersion: v1\n")}}
+
+	var buf strings.Builder
+	rep := progress.New(&buf, false, false)
+
+	svc := NewService(client, toolbox)
+	_, err := svc.Export(context.Background(), Options{
+		AdminURL: "https://tenant.example.com",
+		Token:    "tok",
+		OutDir:   dir,
+		Reporter: rep,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "[1/1] payments") {
+		t.Fatalf("missing product progress: %s", out)
+	}
+	if !strings.Contains(out, "oidc_configuration.json") {
+		t.Fatalf("missing live warning: %s", out)
 	}
 }

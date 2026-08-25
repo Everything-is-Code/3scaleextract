@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/Everything-is-Code/3scaleextract/internal/config"
 	"github.com/Everything-is-Code/3scaleextract/internal/export"
 	"github.com/Everything-is-Code/3scaleextract/internal/output"
+	"github.com/Everything-is-Code/3scaleextract/internal/progress"
 )
 
 func RunMetrics(ctx context.Context, cfg config.ExportConfig) error {
@@ -23,6 +25,8 @@ func RunMetrics(ctx context.Context, cfg config.ExportConfig) error {
 	if err := cfg.ValidateMetrics(); err != nil {
 		return err
 	}
+
+	rep := progress.New(os.Stderr, cfg.Quiet, cfg.Verbose)
 
 	adminURL, err := config.NormalizeAdminURL(cfg.AdminURL)
 	if err != nil {
@@ -53,6 +57,7 @@ func RunMetrics(ctx context.Context, cfg config.ExportConfig) error {
 		return err
 	}
 
+	rep.Phase("Listing API products")
 	services, err := export.NewService(client, nil).ListProducts(ctx)
 	if err != nil {
 		return fmt.Errorf("list products: %w", err)
@@ -61,6 +66,11 @@ func RunMetrics(ctx context.Context, cfg config.ExportConfig) error {
 		return errors.New("no products found for metrics export")
 	}
 
+	rep.Phase(fmt.Sprintf("Exporting metrics for %d products (%s → %s)", len(services), since, until))
 	httpClient := config.NewHTTPClient(cfg.InsecureTLS, 60*time.Second)
-	return export.ExportMetrics(ctx, adminURL, cfg.Token, httpClient, cfg.MaxConcurrent, writer, services, since, until, granularity, metricName)
+	if err := export.ExportMetrics(ctx, adminURL, cfg.Token, httpClient, cfg.MaxConcurrent, writer, services, since, until, granularity, metricName, rep); err != nil {
+		return err
+	}
+	rep.Done(fmt.Sprintf("Metrics export complete: %d products → %s", len(services), cfg.OutDir))
+	return nil
 }

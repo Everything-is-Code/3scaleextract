@@ -252,8 +252,22 @@ func TestRunCommandStderrError(t *testing.T) {
 		},
 	}
 	_, err := tb.ExportProduct(context.Background(), "https://tenant.example.com", "secret", "demo")
-	if err == nil || !strings.Contains(err.Error(), "connection refused") {
+	if !strings.Contains(err.Error(), "connection refused") {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestRedactToolboxArgs(t *testing.T) {
+	args := []string{"product", "export", "https://REDACTED:REDACTED@tenant.example.com", "payments"}
+	got := redactToolboxArgs([]string{"product", "export", "https://secret-token@tenant.example.com", "payments"})
+	if len(got) != len(args) {
+		t.Fatalf("got %v", got)
+	}
+	if strings.Contains(got[2], "secret-token") {
+		t.Fatalf("token not redacted: %q", got[2])
+	}
+	if !strings.Contains(got[2], "REDACTED") {
+		t.Fatalf("expected REDACTED userinfo: %q", got[2])
 	}
 }
 

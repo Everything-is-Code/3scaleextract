@@ -12,6 +12,7 @@ import (
 
 	"github.com/Everything-is-Code/3scaleextract/internal/admin"
 	"github.com/Everything-is-Code/3scaleextract/internal/output"
+	"github.com/Everything-is-Code/3scaleextract/internal/progress"
 )
 
 type Options struct {
@@ -29,6 +30,7 @@ type Options struct {
 	MaxConcurrent       int
 	PerPage             int
 	MetricsHTTPClient   *http.Client
+	Reporter            progress.Reporter
 }
 
 type Exporter interface {
@@ -76,6 +78,8 @@ type applicationRef struct {
 }
 
 func (s *Service) Export(ctx context.Context, opts Options) (*output.Manifest, error) {
+	rep := progress.OrNop(opts.Reporter)
+
 	writer, err := output.NewWriter(opts.OutDir)
 	if err != nil {
 		return nil, err
@@ -91,12 +95,14 @@ func (s *Service) Export(ctx context.Context, opts Options) (*output.Manifest, e
 		IncludeApplications: opts.IncludeApplications,
 	}
 
+	rep.Phase("Listing API products")
 	services, err := s.listServices(ctx)
 	if err != nil {
 		return nil, err
 	}
 	manifest.ProductCount = len(services)
 
+	rep.Phase("Exporting backends")
 	backendCount, err := s.exportBackends(ctx, writer)
 	if err != nil {
 		manifest.Incomplete = true
@@ -104,19 +110,25 @@ func (s *Service) Export(ctx context.Context, opts Options) (*output.Manifest, e
 	}
 	manifest.BackendCount = backendCount
 
+	rep.Phase("Exporting policy catalog")
 	if err := s.exportPolicyCatalog(ctx, writer); err != nil {
 		manifest.Incomplete = true
 		return manifest, err
 	}
 
-	for _, svc := range services {
-		if err := s.exportService(ctx, writer, opts, svc, manifest); err != nil {
+	if len(services) > 0 {
+		rep.Phase(fmt.Sprintf("Exporting %d API products", len(services)))
+	}
+	for i, svc := range services {
+		rep.Item(i+1, len(services), svc.SystemName)
+		if err := s.exportService(ctx, writer, opts, svc, manifest, rep); err != nil {
 			manifest.Incomplete = true
 			return manifest, fmt.Errorf("export service %q: %w", svc.SystemName, err)
 		}
 	}
 
 	if opts.IncludeApplications {
+		rep.Phase("Exporting applications")
 		count, err := s.exportApplications(ctx, writer, opts.PerPage)
 		if err != nil {
 			manifest.Incomplete = true
@@ -143,7 +155,8 @@ func (s *Service) Export(ctx context.Context, opts Options) (*output.Manifest, e
 		if httpClient == nil {
 			httpClient = &http.Client{Timeout: 60 * time.Second}
 		}
-		if err := ExportMetrics(ctx, opts.AdminURL, opts.Token, httpClient, opts.MaxConcurrent, writer, services, since, until, granularity, metricName); err != nil {
+		rep.Phase(fmt.Sprintf("Exporting metrics (%s → %s)", since, until))
+		if err := ExportMetrics(ctx, opts.AdminURL, opts.Token, httpClient, opts.MaxConcurrent, writer, services, since, until, granularity, metricName, rep); err != nil {
 			manifest.Incomplete = true
 			return manifest, fmt.Errorf("export metrics: %w", err)
 		}
@@ -151,6 +164,7 @@ func (s *Service) Export(ctx context.Context, opts Options) (*output.Manifest, e
 	}
 
 	if opts.RedactSecrets {
+		rep.Phase("Redacting secrets")
 		if err := RedactDirectory(writer.Root()); err != nil {
 			return manifest, err
 		}
@@ -216,7 +230,7 @@ func (s *Service) exportPolicyCatalog(ctx context.Context, writer *output.Writer
 	return writer.WriteJSON("policies/catalog.json", catalog)
 }
 
-func (s *Service) exportService(ctx context.Context, writer *output.Writer, opts Options, svc serviceRef, manifest *output.Manifest) error {
+func (s *Service) exportService(ctx context.Context, writer *output.Writer, opts Options, svc serviceRef, manifest *output.Manifest, rep progress.Reporter) error {
 	yamlData, err := s.toolbox.ExportProduct(ctx, opts.AdminURL, opts.Token, svc.SystemName)
 	if err != nil {
 		return err
@@ -244,6 +258,7 @@ func (s *Service) exportService(ctx context.Context, writer *output.Writer, opts
 				return fmt.Errorf("%w: product %s: skipped %s (%s): %w", ErrStrictSidecar, svc.SystemName, f.file, f.path, err)
 			}
 			manifest.RecordSkip(svc.SystemName, f.file, f.path, err)
+			rep.Warning(fmt.Sprintf("product %s: skipped %s (%s: %v)", svc.SystemName, f.file, f.path, err))
 			continue
 		}
 		rel := filepath.Join("products", svc.SystemName, f.file)

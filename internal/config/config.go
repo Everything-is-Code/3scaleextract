@@ -37,6 +37,8 @@ type ExportConfig struct {
 	ToolboxRuntime      string
 	ToolboxNativeBinary string
 	ToolboxCertFile     string
+	Quiet               bool
+	Verbose             bool
 }
 
 func LoadExportFromEnv() (ExportConfig, error) {
@@ -78,6 +80,8 @@ func BindExportFlags(fs *pflag.FlagSet, cfg *ExportConfig) {
 	fs.StringVar(&cfg.ToolboxRuntime, "toolbox-runtime", cfg.ToolboxRuntime, "container runtime for toolbox (docker or podman; auto-detects if empty)")
 	fs.StringVar(&cfg.ToolboxNativeBinary, "toolbox-binary", cfg.ToolboxNativeBinary, "optional local 3scale binary instead of container")
 	fs.StringVar(&cfg.ToolboxCertFile, "toolbox-tls-cert", cfg.ToolboxCertFile, "CA/cert file mounted into toolbox container for TLS")
+	fs.BoolVar(&cfg.Quiet, "quiet", cfg.Quiet, "suppress progress output on stderr")
+	fs.BoolVar(&cfg.Verbose, "verbose", cfg.Verbose, "show detailed progress (e.g. toolbox invocations)")
 	if cfg.ToolboxImage == "" {
 		cfg.ToolboxImage = export.DefaultToolboxImage
 	}
