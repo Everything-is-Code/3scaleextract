@@ -123,17 +123,7 @@ You can also pass credentials via flags: `--admin-url`, `--token`.
 
 ## 4. Run export
 
-### 4.1 Minimal export (start here)
-
-Run this **first** on a new tenant. It exports configuration without metrics (no Enterprise / Analytics requirement).
-
-```bash
-./threescale-export --output ./export
-```
-
-`--output` is **required** unless you set `THREESCALE_OUTPUT_DIR`. There is no implicit default directory.
-
-### 4.2 Full export (applications + metrics + redaction)
+### 4.1 Full export (applications + metrics + redaction)
 
 Only use this after the minimal export works. Metrics need Enterprise + Analytics PAT scope.
 
