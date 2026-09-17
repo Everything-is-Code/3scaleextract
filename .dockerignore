@@ -1,0 +1,11 @@
+.git
+.github
+dist
+tmp
+*.md
+!deploy/README.md
+testdata
+docs
+.cursor
+.engram
+.codegraph

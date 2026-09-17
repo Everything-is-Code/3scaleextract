@@ -1,0 +1,143 @@
+# threescale-export — OpenShift (copy/paste)
+#
+# 1. Edit ONLY the Secret below (admin URL + PAT).
+# 2. oc apply -f openshift.yaml
+# 3. oc get route threescale-export -n threescale-export
+#
+# Image: ghcr.io/everything-is-code/threescale-export:latest
+# Built by .github/workflows/container.yml
+#
+# Non-root image (USER 1001) — compatible with OpenShift restricted SCC.
+# If the GHCR package is private, create a pull secret and uncomment imagePullSecrets.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: threescale-export
+  labels:
+    app: threescale-export
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: threescale-export-credentials
+  namespace: threescale-export
+  labels:
+    app: threescale-export
+type: Opaque
+stringData:
+  # >>> EDIT THESE TWO VALUES <<<
+  THREESCALE_ADMIN_URL: "https://TENANT-admin.apps.example.com"
+  THREESCALE_ACCESS_TOKEN: "replace-with-personal-access-token"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: threescale-export
+  namespace: threescale-export
+  labels:
+    app: threescale-export
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: threescale-export
+  template:
+    metadata:
+      labels:
+        app: threescale-export
+    spec:
+      securityContext:
+        hostUsers: false
+      # Uncomment if ghcr.io package is private:
+      # imagePullSecrets:
+      #   - name: ghcr-pull
+      containers:
+        - name: export
+          image: image-registry.openshift-image-registry.svc:5000/threescale-export/threescale-export:latest
+          imagePullPolicy: Always
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: threescale-export-credentials
+          env:
+            - name: THREESCALE_OUTPUT_DIR
+              value: /export/data
+            - name: THREESCALE_TOOLBOX_BINARY
+              value: /opt/toolbox/bin/3scale
+            - name: THREESCALE_INCLUDE_APPLICATIONS
+              value: "true"
+            - name: THREESCALE_REDACT_SECRETS
+              value: "true"
+            - name: THREESCALE_INSECURE_TLS
+              value: "true"
+            - name: FORCE_EXPORT
+              value: "false"
+          volumeMounts:
+            - name: export-data
+              mountPath: /export
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+      volumes:
+        - name: export-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: threescale-export
+  namespace: threescale-export
+  labels:
+    app: threescale-export
+spec:
+  selector:
+    app: threescale-export
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: threescale-export
+  namespace: threescale-export
+  labels:
+    app: threescale-export
+spec:
+  to:
+    kind: Service
+    name: threescale-export
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

@@ -1,0 +1,27 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: threescale-export
+  namespace: threescale-export
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: threescale-export
+  namespace: threescale-export
+spec:
+  source:
+    type: Binary
+    binary: {}
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: deploy/Dockerfile
+      buildArgs:
+        - name: VERSION
+          value: dev
+  output:
+    to:
+      kind: ImageStreamTag
+      name: threescale-export:latest
+  triggers: []
