@@ -7,11 +7,7 @@
 # Image (pre-built): ghcr.io/everything-is-code/threescale-export:latest
 # Package: https://github.com/orgs/Everything-is-Code/packages/container/threescale-export
 #
-# GHCR package is private by default — run ONCE before apply (or set package public in GitHub):
-#   oc create secret docker-registry ghcr-pull -n threescale-export \
-#     --docker-server=ghcr.io --docker-username=GITHUB_USER \
-#     --docker-password="$(gh auth token)"
-# Then uncomment imagePullSecrets below.
+# GHCR package must be public (one-time): GitHub → Packages → threescale-export → Package settings → Change visibility → Public
 ---
 apiVersion: v1
 kind: Namespace
@@ -52,8 +48,6 @@ spec:
     spec:
       securityContext:
         hostUsers: false
-      imagePullSecrets:
-        - name: ghcr-pull
       containers:
         - name: export
           image: ghcr.io/everything-is-code/threescale-export:latest
