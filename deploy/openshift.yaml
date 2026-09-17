@@ -1,14 +1,17 @@
-# threescale-export — OpenShift (copy/paste)
+# threescale-export — OpenShift (copy/paste, no build on cluster)
 #
-# 1. Edit ONLY the Secret below (admin URL + PAT).
+# 1. Edit ONLY the Secret below (Admin URL + PAT).
 # 2. oc apply -f openshift.yaml
 # 3. oc get route threescale-export -n threescale-export
 #
-# Image: ghcr.io/everything-is-code/threescale-export:latest
-# Built by .github/workflows/container.yml
+# Image (pre-built): ghcr.io/everything-is-code/threescale-export:latest
+# Package: https://github.com/orgs/Everything-is-Code/packages/container/threescale-export
 #
-# Non-root image (USER 1001) — compatible with OpenShift restricted SCC.
-# If the GHCR package is private, create a pull secret and uncomment imagePullSecrets.
+# GHCR package is private by default — run ONCE before apply (or set package public in GitHub):
+#   oc create secret docker-registry ghcr-pull -n threescale-export \
+#     --docker-server=ghcr.io --docker-username=GITHUB_USER \
+#     --docker-password="$(gh auth token)"
+# Then uncomment imagePullSecrets below.
 ---
 apiVersion: v1
 kind: Namespace
@@ -49,12 +52,11 @@ spec:
     spec:
       securityContext:
         hostUsers: false
-      # Uncomment if ghcr.io package is private:
-      # imagePullSecrets:
-      #   - name: ghcr-pull
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: export
-          image: image-registry.openshift-image-registry.svc:5000/threescale-export/threescale-export:latest
+          image: ghcr.io/everything-is-code/threescale-export:latest
           imagePullPolicy: Always
           securityContext:
             runAsNonRoot: true

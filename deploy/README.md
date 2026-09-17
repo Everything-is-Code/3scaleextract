@@ -47,28 +47,26 @@ podman push ghcr.io/everything-is-code/threescale-export:latest
 
 After the first successful run, set the package visibility to **public** under GitHub → Packages (or add an `imagePullSecrets` entry in the manifest).
 
-## Deploy (copy / paste)
+## Deploy on a new cluster (no build)
 
-1. Edit credentials in [`openshift.yaml`](openshift.yaml) — only the `Secret` block:
-
-```yaml
-stringData:
-  THREESCALE_ADMIN_URL: "https://tenant-admin.apps.example.com"
-  THREESCALE_ACCESS_TOKEN: "your-pat"
-```
-
-2. Apply:
+Pre-built image: `ghcr.io/everything-is-code/threescale-export:latest`
 
 ```bash
+oc login https://api.YOUR-CLUSTER:6443 --token=... --insecure-skip-tls-verify=true
+
+# 1. GHCR pull secret (package is private)
+oc create secret docker-registry ghcr-pull -n threescale-export \
+  --docker-server=ghcr.io --docker-username=YOUR_GITHUB_USER \
+  --docker-password="$(gh auth token)"
+
+# 2. Edit 3scale Admin URL + PAT in deploy/openshift.yaml (Secret block only)
 oc apply -f deploy/openshift.yaml
-```
 
-3. Wait and open the route:
-
-```bash
 oc logs -f deployment/threescale-export -n threescale-export
 oc get route threescale-export -n threescale-export
 ```
+
+No `oc start-build` on the cluster. Alternative: set the [GHCR package](https://github.com/orgs/Everything-is-Code/packages/container/package/threescale-export) to **public** and remove `imagePullSecrets` from the Deployment.
 
 | URL | Content |
 |-----|---------|
