@@ -1,0 +1,15 @@
+# Copy to threescale-cred.yaml, fill in values, then: oc apply -f threescale-cred.yaml
+#
+#   cp deploy/threescale-cred.yaml.example deploy/threescale-cred.yaml
+#
+apiVersion: v1
+kind: Secret
+metadata:
+  name: threescale-cred
+  namespace: threescale-export
+  labels:
+    app: threescale-export
+type: Opaque
+stringData:
+  THREESCALE_ADMIN_URL: ""
+  THREESCALE_ACCESS_TOKEN: ""

@@ -1,13 +1,11 @@
-# threescale-export — OpenShift (copy/paste, no build on cluster)
+# threescale-export — OpenShift (no build on cluster)
 #
-# 1. Edit ONLY the Secret below (Admin URL + PAT).
-# 2. oc apply -f openshift.yaml
-# 3. oc get route threescale-export -n threescale-export
+# 1. cp deploy/threescale-cred.yaml.example deploy/threescale-cred.yaml  → fill Admin URL + PAT
+# 2. oc apply -f deploy/threescale-cred.yaml
+# 3. oc apply -f deploy/openshift.yaml
+# 4. oc get route threescale-export -n threescale-export
 #
-# Image (pre-built): ghcr.io/everything-is-code/threescale-export:latest
-# Package: https://github.com/orgs/Everything-is-Code/packages/container/threescale-export
-#
-# GHCR package must be public (one-time): GitHub → Packages → threescale-export → Package settings → Change visibility → Public
+# Image: ghcr.io/everything-is-code/threescale-export:latest (public GHCR package)
 ---
 apiVersion: v1
 kind: Namespace
@@ -15,19 +13,6 @@ metadata:
   name: threescale-export
   labels:
     app: threescale-export
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: threescale-export-credentials
-  namespace: threescale-export
-  labels:
-    app: threescale-export
-type: Opaque
-stringData:
-  # >>> EDIT THESE TWO VALUES <<<
-  THREESCALE_ADMIN_URL: "https://TENANT-admin.apps.example.com"
-  THREESCALE_ACCESS_TOKEN: "replace-with-personal-access-token"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -63,7 +48,7 @@ spec:
               containerPort: 8080
           envFrom:
             - secretRef:
-                name: threescale-export-credentials
+                name: threescale-cred
           env:
             - name: THREESCALE_OUTPUT_DIR
               value: /export/data
