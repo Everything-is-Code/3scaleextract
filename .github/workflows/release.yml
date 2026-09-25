@@ -72,9 +72,11 @@ jobs:
           body: |
             ## What's new in v${{ steps.version.outputs.tag }}
 
+            ### threescale-export
+            - **`--toolbox-platform`** / `THREESCALE_TOOLBOX_PLATFORM` — opt-in `--platform` on toolbox `podman|docker run` (e.g. `linux/amd64` on Apple Silicon). Empty omits the flag (no auto-default). Ignored with `--toolbox-binary`.
+
             ### Release packaging
-            - **macOS Apple Silicon** — publish `*-darwin-arm64.tar.gz` (+ `.sha256`) for `threescale-export`, `threescale-seed`, and `threescale-visualize` alongside existing `*-linux-amd64.tar.gz` assets
-            - **Docs** — downloads labeled by OS/arch; native Mac CLI still needs qemu/binfmt for the Red Hat `linux/amd64` toolbox image
+            - **macOS Apple Silicon** — `*-darwin-arm64.tar.gz` (+ `.sha256`) alongside `*-linux-amd64.tar.gz` (since v0.4.5)
 
             See [README](https://github.com/${{ github.repository }}/blob/main/README.md) and [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for flags and full release history.
 
@@ -117,8 +119,10 @@ jobs:
             ```bash
             tar xzf threescale-export-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz
             chmod +x threescale-export
-            # Same export flags as above. Toolbox still needs AMD64 emulation
-            # (Docker Desktop / Podman machine qemu/binfmt) for the Red Hat image.
+            # Same export flags as above. Prefer:
+            #   --toolbox-platform linux/amd64
+            # when using the containerized Red Hat toolbox under qemu/binfmt
+            # (Docker Desktop / Podman machine).
             ```
 
             Metrics only:
