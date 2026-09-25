@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-09-25
+
 ### Added
 
 - **Release (CI)** — publish `darwin/arm64` archives (`*-darwin-arm64.tar.gz` + `.sha256`) for `threescale-export`, `threescale-seed`, and `threescale-visualize` alongside existing `*-linux-amd64.tar.gz` assets (names unchanged).
