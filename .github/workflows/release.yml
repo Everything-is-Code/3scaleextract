@@ -72,21 +72,11 @@ jobs:
           body: |
             ## What's new in v${{ steps.version.outputs.tag }}
 
-            ### threescale-export
-            - **Progress** — stderr phase banners, per-product `[i/n]` lines, live sidecar warnings, completion summary; `--quiet` / `--verbose` (toolbox args redacted)
-            - **Hit metrics** — `--include-metrics` on full export or `threescale-export metrics` for `stats/` only (Enterprise + PAT Analytics scope)
-            - **Self-signed TLS** — `--insecure` skips verification for Admin API, Analytics API, and toolbox (`3scale -k`); optional `--toolbox-tls-cert` for CA pinning
-            - **`stats/` layout** — `stats/query.json` and `stats/products/{system_name}/hits.json` per product
+            ### Release packaging
+            - **macOS Apple Silicon** — publish `*-darwin-arm64.tar.gz` (+ `.sha256`) for `threescale-export`, `threescale-seed`, and `threescale-visualize` alongside existing `*-linux-amd64.tar.gz` assets
+            - **Docs** — downloads labeled by OS/arch; native Mac CLI still needs qemu/binfmt for the Red Hat `linux/amd64` toolbox image
 
-            ### threescale-visualize
-            - **Backend usage ranking** — includes 1:1 product→backend links; empty shared list no longer breaks the HTML/canvas dashboard (`shared: []`)
-            - **Redacted / BOM exports** — strips UTF-8 BOM; loads exports with redacted product YAML without failing
-            - See [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md) for report layout and policy visibility
-
-            ### threescale-seed
-            - No changes in this release unless noted in generated release notes below.
-
-            See [README](https://github.com/${{ github.repository }}/blob/main/README.md) and [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for flags and release history.
+            See [README](https://github.com/${{ github.repository }}/blob/main/README.md) and [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for flags and full release history.
 
             ---
 
