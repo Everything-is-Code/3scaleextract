@@ -12,23 +12,33 @@ Follow these steps **in order**. Do not skip the verification step after each ph
 
 | Step | What | Verify before continuing |
 |------|------|--------------------------|
-| 1 | Download the Linux binary | `file threescale-export` shows `ELF 64-bit` |
+| 1 | Download the binary for your OS/arch | Linux: `file threescale-export` shows `ELF 64-bit`; macOS Apple Silicon: `Mach-O 64-bit` arm64 |
 | 2 | Install Docker **or** Podman | `docker version` or `podman version` works |
 | 3 | Log in and pull the Red Hat toolbox image | `docker run --rm registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16 3scale help` prints help |
 | 4 | Set credentials (Admin URL + PAT) | `echo "$THREESCALE_ADMIN_URL"` and `echo "$THREESCALE_ACCESS_TOKEN"` are non-empty |
 | 5 | Run export with `--output` | stderr ends with `Export complete: … → ./export` and `export/manifest.json` exists |
 
-**Platform:** pre-built binaries are **Linux x86_64 only**. There is no Windows or macOS release. Run on a Linux VM, WSL2, or build from source (see [Build from source](#build-from-source)).
+**Platform:** pre-built binaries are published for **Linux amd64** (`*-linux-amd64.tar.gz`) and **macOS Apple Silicon** (`*-darwin-arm64.tar.gz`). There is no Windows release. On Linux you can also use a VM or WSL2; or [build from source](#build-from-source).
+
+> **Apple Silicon note:** a native darwin/arm64 CLI does **not** remove the need for the Red Hat toolbox `linux/amd64` image under qemu/binfmt. See [Apple Silicon (macOS)](#apple-silicon-macos).
 
 ---
 
 ## 1. Download and install the binary
 
-1. Open [Releases](https://github.com/Everything-is-Code/3scaleextract/releases) and download **`threescale-export-vX.Y.Z-linux-amd64.tar.gz`** (latest: check the tag on the release page).
+Published archives are labeled by OS and architecture:
+
+| Platform | Archive suffix | Example |
+|----------|----------------|---------|
+| **Linux amd64** | `*-linux-amd64.tar.gz` | `threescale-export-v0.4.4-linux-amd64.tar.gz` |
+| **macOS Apple Silicon** (darwin/arm64) | `*-darwin-arm64.tar.gz` | `threescale-export-v0.4.4-darwin-arm64.tar.gz` |
+
+1. Open [Releases](https://github.com/Everything-is-Code/3scaleextract/releases) and download the archive for **your** OS/arch (latest: check the tag on the release page).
 2. Extract and make it executable:
 
 ```bash
-tar -xzf threescale-export-v*.tar.gz
+# Linux amd64 example — on Apple Silicon use *-darwin-arm64.tar.gz instead
+tar -xzf threescale-export-v*-linux-amd64.tar.gz
 chmod +x threescale-export
 ./threescale-export --version
 ```
@@ -38,6 +48,15 @@ You should see a version string (for example `v0.4.4`). If you get `Permission d
 > **Do not** run the `.tar.gz` file directly. Extract it first.
 >
 > **Do not** rename the binary to `3scaleextract` or `3scale-export` unless you update your commands accordingly. The command name is **`threescale-export`**.
+>
+> **Do not** run a `linux-amd64` binary natively on macOS — that produces `exec format error`. Use `*-darwin-arm64.tar.gz` on Apple Silicon.
+
+### Apple Silicon (macOS)
+
+1. Download and extract **`*-darwin-arm64.tar.gz`** for the CLI you need (export, seed, and/or visualize).
+2. Use **Docker Desktop** or a **Podman machine** with **qemu/binfmt** (AMD64 emulation) enabled.
+3. The Red Hat toolbox image is **`linux/amd64`**. Product YAML export still pulls/runs that AMD64 image under emulation — the native Mac CLI alone is not enough.
+4. Until an explicit toolbox platform flag ships, nested PATH-wrapper workarounds for forcing AMD64 on toolbox `pull`/`run`/`create` are documented in [issue #65](https://github.com/Everything-is-Code/3scaleextract/issues/65).
 
 ---
 
@@ -60,7 +79,7 @@ Product YAML export uses the official Red Hat toolbox container. You must log in
 | Requirement | Description |
 |-------------|-------------|
 | **Red Hat Registry account** | [Registry Service Account](https://access.redhat.com/terms-based-registry) |
-| **Toolbox image** | `registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16` |
+| **Toolbox image** | `registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16` (`linux/amd64`) |
 
 ```bash
 docker login registry.redhat.io
@@ -387,8 +406,9 @@ export/
 - Does not export billing or Developer Portal content
 - Analytics hit metrics require Enterprise tier and PAT Analytics scope (`--include-metrics` or `metrics` subcommand)
 - Requires access to `registry.redhat.io` and a container runtime
-- Product YAML export depends on the official Red Hat toolbox image
-- Pre-built binaries: Linux amd64 only
+- Product YAML export depends on the official Red Hat toolbox image (`linux/amd64`); on Apple Silicon, qemu/binfmt (or equivalent) emulation is required for that image
+- A native macOS Apple Silicon CLI binary alone does not solve toolbox architecture mismatch
+- Pre-built binaries: Linux amd64 and macOS Apple Silicon (darwin/arm64)
 
 ## Release (CI)
 
@@ -399,7 +419,7 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-GitHub Actions runs tests, builds `threescale-export`, `threescale-seed`, and `threescale-visualize` for Linux amd64, and publishes `.tar.gz` artifacts with checksums on [Releases](https://github.com/Everything-is-Code/3scaleextract/releases).
+GitHub Actions runs tests, cross-compiles `threescale-export`, `threescale-seed`, and `threescale-visualize` for **linux/amd64** and **darwin/arm64** (`CGO_ENABLED=0` on `ubuntu-latest`), and publishes `.tar.gz` artifacts with checksums on [Releases](https://github.com/Everything-is-Code/3scaleextract/releases).
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
 

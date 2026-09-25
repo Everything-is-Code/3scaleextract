@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **Release (CI)** — publish `darwin/arm64` archives (`*-darwin-arm64.tar.gz` + `.sha256`) for `threescale-export`, `threescale-seed`, and `threescale-visualize` alongside existing `*-linux-amd64.tar.gz` assets (names unchanged).
+- **Docs** — README labels downloads by OS/arch and documents the macOS Apple Silicon workflow, including that the Red Hat toolbox image remains `linux/amd64` and still needs qemu/binfmt (Docker Desktop / Podman machine) emulation.
+
 ## [0.4.4] - 2026-08-25
 
 ### Added
