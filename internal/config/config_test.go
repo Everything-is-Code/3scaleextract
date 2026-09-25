@@ -117,6 +117,34 @@ func TestLoadExportFromEnv(t *testing.T) {
 	}
 }
 
+func TestLoadExportFromEnvToolboxPlatform(t *testing.T) {
+	t.Setenv("THREESCALE_ADMIN_URL", "https://tenant.example.com")
+	t.Setenv("THREESCALE_ACCESS_TOKEN", "secret")
+	t.Setenv("THREESCALE_TOOLBOX_PLATFORM", "linux/amd64")
+
+	cfg, err := LoadExportFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ToolboxPlatform != "linux/amd64" {
+		t.Fatalf("ToolboxPlatform = %q", cfg.ToolboxPlatform)
+	}
+}
+
+func TestLoadExportFromEnvToolboxPlatformWhitespace(t *testing.T) {
+	t.Setenv("THREESCALE_ADMIN_URL", "https://tenant.example.com")
+	t.Setenv("THREESCALE_ACCESS_TOKEN", "secret")
+	t.Setenv("THREESCALE_TOOLBOX_PLATFORM", "   ")
+
+	cfg, err := LoadExportFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ToolboxPlatform != "" {
+		t.Fatalf("whitespace ToolboxPlatform must be empty, got %q", cfg.ToolboxPlatform)
+	}
+}
+
 func TestBindExportFlags(t *testing.T) {
 	cfg := ExportConfig{PerPage: DefaultPerPage, MaxConcurrent: DefaultMaxConcurrent}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
@@ -131,6 +159,7 @@ func TestBindExportFlags(t *testing.T) {
 		"--insecure",
 		"--toolbox-runtime", "docker",
 		"--toolbox-binary", "/usr/bin/3scale",
+		"--toolbox-platform", "linux/amd64",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -145,6 +174,9 @@ func TestBindExportFlags(t *testing.T) {
 	}
 	if cfg.ToolboxRuntime != "docker" || cfg.ToolboxNativeBinary != "/usr/bin/3scale" {
 		t.Fatalf("toolbox cfg = %#v", cfg)
+	}
+	if cfg.ToolboxPlatform != "linux/amd64" {
+		t.Fatalf("ToolboxPlatform = %q", cfg.ToolboxPlatform)
 	}
 }
 
