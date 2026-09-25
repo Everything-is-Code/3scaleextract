@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-09-25
+
 ### Added
 
 - **threescale-export** — `--toolbox-platform` / `THREESCALE_TOOLBOX_PLATFORM` opt-in container platform for toolbox `run` (e.g. `linux/amd64` on Apple Silicon). Empty/whitespace omits `--platform` (no auto-default). Ignored when `--toolbox-binary` is set.
