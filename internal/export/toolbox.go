@@ -46,6 +46,8 @@ type ToolboxOptions struct {
 	NativeBinary string
 	// CertFile mounts a CA/cert for toolbox TLS (SSL_CERT_FILE in container).
 	CertFile string
+	// Platform is passed to docker/podman run --platform when non-empty (container path only).
+	Platform string
 	// Insecure passes -k to toolbox to skip TLS verification (lab tenants).
 	Insecure bool
 	// CommandRunner overrides process execution (defaults to os/exec).
@@ -59,6 +61,7 @@ type Toolbox struct {
 	image        string
 	nativeBinary string
 	certFile     string
+	platform     string
 	insecure     bool
 	runner       CommandRunner
 	onVerbose    func(string)
@@ -70,6 +73,7 @@ func NewToolbox(opts ToolboxOptions) (*Toolbox, error) {
 		image:        strings.TrimSpace(opts.Image),
 		nativeBinary: strings.TrimSpace(opts.NativeBinary),
 		certFile:     strings.TrimSpace(opts.CertFile),
+		platform:     strings.TrimSpace(opts.Platform),
 		insecure:     opts.Insecure,
 		runner:       opts.CommandRunner,
 		onVerbose:    opts.OnVerbose,
@@ -141,6 +145,9 @@ func (t *Toolbox) runNative(ctx context.Context, remoteURL, systemName string) (
 
 func (t *Toolbox) runContainer(ctx context.Context, remoteURL, systemName string) ([]byte, error) {
 	args := []string{"run", "--rm"}
+	if p := strings.TrimSpace(t.platform); p != "" {
+		args = append(args, "--platform", p)
+	}
 	if t.certFile != "" {
 		args = append(args,
 			"--env", "SSL_CERT_FILE=/tmp/3scale-toolbox-cert.pem",

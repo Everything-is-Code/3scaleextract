@@ -37,20 +37,22 @@ type ExportConfig struct {
 	ToolboxRuntime      string
 	ToolboxNativeBinary string
 	ToolboxCertFile     string
+	ToolboxPlatform     string
 	Quiet               bool
 	Verbose             bool
 }
 
 func LoadExportFromEnv() (ExportConfig, error) {
 	cfg := ExportConfig{
-		AuthConfig:            LoadAuthFromEnv(),
-		OutDir:                strings.TrimSpace(os.Getenv("THREESCALE_OUTPUT_DIR")),
-		PerPage:               DefaultPerPage,
-		MaxConcurrent:         DefaultMaxConcurrent,
-		ToolboxImage:          strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_IMAGE")),
-		ToolboxRuntime:        strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_RUNTIME")),
-		ToolboxNativeBinary:   strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_BINARY")),
-		ToolboxCertFile:       strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_TLS_CERT")),
+		AuthConfig:          LoadAuthFromEnv(),
+		OutDir:              strings.TrimSpace(os.Getenv("THREESCALE_OUTPUT_DIR")),
+		PerPage:             DefaultPerPage,
+		MaxConcurrent:       DefaultMaxConcurrent,
+		ToolboxImage:        strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_IMAGE")),
+		ToolboxRuntime:      strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_RUNTIME")),
+		ToolboxNativeBinary: strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_BINARY")),
+		ToolboxCertFile:     strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_TLS_CERT")),
+		ToolboxPlatform:     strings.TrimSpace(os.Getenv("THREESCALE_TOOLBOX_PLATFORM")),
 	}
 	return cfg, cfg.ValidateAuth()
 }
@@ -80,6 +82,7 @@ func BindExportFlags(fs *pflag.FlagSet, cfg *ExportConfig) {
 	fs.StringVar(&cfg.ToolboxRuntime, "toolbox-runtime", cfg.ToolboxRuntime, "container runtime for toolbox (docker or podman; auto-detects if empty)")
 	fs.StringVar(&cfg.ToolboxNativeBinary, "toolbox-binary", cfg.ToolboxNativeBinary, "optional local 3scale binary instead of container")
 	fs.StringVar(&cfg.ToolboxCertFile, "toolbox-tls-cert", cfg.ToolboxCertFile, "CA/cert file mounted into toolbox container for TLS")
+	fs.StringVar(&cfg.ToolboxPlatform, "toolbox-platform", cfg.ToolboxPlatform, "container platform for toolbox run (e.g. linux/amd64); empty omits --platform")
 	fs.BoolVar(&cfg.Quiet, "quiet", cfg.Quiet, "suppress progress output on stderr")
 	fs.BoolVar(&cfg.Verbose, "verbose", cfg.Verbose, "show detailed progress (e.g. toolbox invocations)")
 	if cfg.ToolboxImage == "" {

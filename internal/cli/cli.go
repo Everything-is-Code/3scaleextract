@@ -75,6 +75,7 @@ func RunExport(ctx context.Context, cfg config.ExportConfig) error {
 		Image:        cfg.ToolboxImage,
 		NativeBinary: cfg.ToolboxNativeBinary,
 		CertFile:     cfg.ToolboxCertFile,
+		Platform:     cfg.ToolboxPlatform,
 		Insecure:     cfg.InsecureTLS,
 		OnVerbose:    verboseHook(rep, cfg.Verbose),
 	})

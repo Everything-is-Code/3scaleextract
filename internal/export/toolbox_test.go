@@ -151,6 +151,142 @@ func TestRunContainerArgs(t *testing.T) {
 	}
 }
 
+func TestRunContainerPlatformLinuxAmd64(t *testing.T) {
+	var captured []string
+	runner := &mockCommandRunner{
+		fn: func(_ string, args []string) ([]byte, []byte, error) {
+			captured = append([]string(nil), args...)
+			return []byte("apiVersion: v1\nkind: Product\n"), nil, nil
+		},
+	}
+	tb := &Toolbox{
+		runtime:  "podman",
+		image:    DefaultToolboxImage,
+		platform: "linux/amd64",
+		runner:   runner,
+	}
+	if _, err := tb.ExportProduct(context.Background(), "https://admin.example.com", "tok", "payments"); err != nil {
+		t.Fatal(err)
+	}
+	if len(captured) < 4 {
+		t.Fatalf("args too short: %v", captured)
+	}
+	if captured[0] != "run" || captured[1] != "--rm" || captured[2] != "--platform" || captured[3] != "linux/amd64" {
+		t.Fatalf("expected run --rm --platform linux/amd64…, got %v", captured)
+	}
+}
+
+func TestRunContainerPlatformEmptyOmitsFlag(t *testing.T) {
+	for _, platform := range []string{"", "   ", "\t"} {
+		t.Run("platform="+platform, func(t *testing.T) {
+			var captured []string
+			runner := &mockCommandRunner{
+				fn: func(_ string, args []string) ([]byte, []byte, error) {
+					captured = append([]string(nil), args...)
+					return []byte("apiVersion: v1\nkind: Product\n"), nil, nil
+				},
+			}
+			tb := &Toolbox{
+				runtime:  "podman",
+				image:    DefaultToolboxImage,
+				platform: platform,
+				runner:   runner,
+			}
+			if _, err := tb.ExportProduct(context.Background(), "https://admin.example.com", "tok", "payments"); err != nil {
+				t.Fatal(err)
+			}
+			if len(captured) < 2 || captured[0] != "run" || captured[1] != "--rm" {
+				t.Fatalf("expected run --rm…, got %v", captured)
+			}
+			for _, arg := range captured {
+				if arg == "--platform" {
+					t.Fatalf("--platform must be omitted for empty/whitespace platform, got %v", captured)
+				}
+			}
+		})
+	}
+}
+
+func TestRunContainerPlatformBeforeCertMounts(t *testing.T) {
+	var captured []string
+	runner := &mockCommandRunner{
+		fn: func(_ string, args []string) ([]byte, []byte, error) {
+			captured = append([]string(nil), args...)
+			return []byte("apiVersion: v1\nkind: Product\n"), nil, nil
+		},
+	}
+	tb := &Toolbox{
+		runtime:  "podman",
+		image:    DefaultToolboxImage,
+		platform: "linux/amd64",
+		certFile: "/etc/ssl/certs/custom.pem",
+		runner:   runner,
+	}
+	if _, err := tb.ExportProduct(context.Background(), "https://admin.example.com", "tok", "payments"); err != nil {
+		t.Fatal(err)
+	}
+	wantPrefix := []string{
+		"run", "--rm", "--platform", "linux/amd64",
+		"--env", "SSL_CERT_FILE=/tmp/3scale-toolbox-cert.pem",
+		"-v", "/etc/ssl/certs/custom.pem:/tmp/3scale-toolbox-cert.pem:ro",
+		DefaultToolboxImage,
+	}
+	if len(captured) < len(wantPrefix) {
+		t.Fatalf("args too short: %v", captured)
+	}
+	for i, want := range wantPrefix {
+		if captured[i] != want {
+			t.Fatalf("args[%d]=%q want %q; full=%v", i, captured[i], want, captured)
+		}
+	}
+}
+
+func TestExportProductNativeIgnoresPlatform(t *testing.T) {
+	var captured struct {
+		command string
+		args    []string
+	}
+	runner := &mockCommandRunner{
+		fn: func(command string, args []string) ([]byte, []byte, error) {
+			captured.command = command
+			captured.args = append([]string(nil), args...)
+			return []byte("kind: Product\n"), nil, nil
+		},
+	}
+	tb := &Toolbox{
+		nativeBinary: "/usr/bin/3scale",
+		platform:     "linux/amd64",
+		runner:       runner,
+	}
+	if _, err := tb.ExportProduct(context.Background(), "https://tenant.example.com", "secret", "demo_api"); err != nil {
+		t.Fatal(err)
+	}
+	if captured.command != "/usr/bin/3scale" {
+		t.Fatalf("command = %q", captured.command)
+	}
+	for _, arg := range captured.args {
+		if arg == "run" || arg == "--platform" || arg == "linux/amd64" {
+			t.Fatalf("native argv must not include container platform tokens: %v", captured.args)
+		}
+	}
+	if len(captured.args) != 4 || captured.args[0] != "product" || captured.args[3] != "demo_api" {
+		t.Fatalf("args = %v", captured.args)
+	}
+}
+
+func TestNewToolboxPlatformTrimSpace(t *testing.T) {
+	tb, err := NewToolbox(ToolboxOptions{
+		NativeBinary: "/usr/bin/3scale",
+		Platform:     "  linux/amd64  ",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tb.platform != "linux/amd64" {
+		t.Fatalf("platform after TrimSpace = %q", tb.platform)
+	}
+}
+
 func TestRunContainerArgsInsecure(t *testing.T) {
 	var captured []string
 	runner := &mockCommandRunner{

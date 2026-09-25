@@ -56,7 +56,12 @@ You should see a version string (for example `v0.4.4`). If you get `Permission d
 1. Download and extract **`*-darwin-arm64.tar.gz`** for the CLI you need (export, seed, and/or visualize).
 2. Use **Docker Desktop** or a **Podman machine** with **qemu/binfmt** (AMD64 emulation) enabled.
 3. The Red Hat toolbox image is **`linux/amd64`**. Product YAML export still pulls/runs that AMD64 image under emulation — the native Mac CLI alone is not enough.
-4. Until an explicit toolbox platform flag ships, nested PATH-wrapper workarounds for forcing AMD64 on toolbox `pull`/`run`/`create` are documented in [issue #65](https://github.com/Everything-is-Code/3scaleextract/issues/65).
+4. Prefer **`--toolbox-platform linux/amd64`** (or `THREESCALE_TOOLBOX_PLATFORM=linux/amd64`) so the exporter passes `--platform` on toolbox `run`. The exporter issues `run` only (no separate `pull`/`create`); if you pre-pull the image yourself, use the same `--platform` value. Nested PATH-wrapper workarounds remain documented historically in [issue #65](https://github.com/Everything-is-Code/3scaleextract/issues/65).
+
+```bash
+export THREESCALE_TOOLBOX_PLATFORM=linux/amd64
+# or: ./threescale-export --toolbox-platform linux/amd64 ...
+```
 
 ---
 
@@ -234,6 +239,7 @@ export THREESCALE_OUTPUT_DIR="./export"   # alternative to --output
 export THREESCALE_TOOLBOX_IMAGE="registry.redhat.io/3scale-amp2/toolbox-rhel9:3scale2.16"
 export THREESCALE_TOOLBOX_RUNTIME="docker"
 export THREESCALE_TOOLBOX_TLS_CERT="/path/to/ca.pem"   # self-signed TLS on Admin Portal
+export THREESCALE_TOOLBOX_PLATFORM="linux/amd64"       # opt-in; empty omits --platform on toolbox run
 ```
 
 ### Flags
@@ -256,6 +262,7 @@ export THREESCALE_TOOLBOX_TLS_CERT="/path/to/ca.pem"   # self-signed TLS on Admi
 | `--toolbox-image` | Toolbox image (default Red Hat 2.16) |
 | `--toolbox-runtime` | `docker` or `podman` (auto-detect if empty) |
 | `--toolbox-tls-cert` | CA certificate mounted in the toolbox container |
+| `--toolbox-platform` | Container platform for toolbox `run` (e.g. `linux/amd64`); empty omits `--platform`. Container path only — ignored when `--toolbox-binary` is set. Exporter issues `run` only; pre-pull with the same `--platform` if you pull manually. |
 | `--quiet` | Suppress progress output on stderr |
 | `--verbose` | Show detailed progress (e.g. toolbox invocations; credentials redacted) |
 
