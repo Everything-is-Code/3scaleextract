@@ -34,18 +34,17 @@ jobs:
           mkdir -p dist
           ldflags="-s -w -X github.com/Everything-is-Code/3scaleextract/internal/version.Version=${VERSION}"
 
-          for bin in threescale-export threescale-seed threescale-visualize; do
-            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-              go build -ldflags="${ldflags}" -o "dist/${bin}" "./cmd/${bin}"
+          for platform in "linux amd64" "darwin arm64"; do
+            set -- $platform
+            GOOS=$1
+            GOARCH=$2
+            for bin in threescale-export threescale-seed threescale-visualize; do
+              CGO_ENABLED=0 GOOS="${GOOS}" GOARCH="${GOARCH}" \
+                go build -ldflags="${ldflags}" -o "dist/${bin}" "./cmd/${bin}"
+              ( cd dist && tar czf "${bin}-v${VERSION}-${GOOS}-${GOARCH}.tar.gz" "${bin}" )
+              ( cd dist && sha256sum "${bin}-v${VERSION}-${GOOS}-${GOARCH}.tar.gz" > "${bin}-v${VERSION}-${GOOS}-${GOARCH}.tar.gz.sha256" )
+            done
           done
-
-          ( cd dist && tar czf "threescale-export-v${VERSION}-linux-amd64.tar.gz" threescale-export )
-          ( cd dist && tar czf "threescale-seed-v${VERSION}-linux-amd64.tar.gz" threescale-seed )
-          ( cd dist && tar czf "threescale-visualize-v${VERSION}-linux-amd64.tar.gz" threescale-visualize )
-
-          ( cd dist && sha256sum threescale-export-v"${VERSION}"-linux-amd64.tar.gz > threescale-export-v"${VERSION}"-linux-amd64.tar.gz.sha256 )
-          ( cd dist && sha256sum threescale-seed-v"${VERSION}"-linux-amd64.tar.gz > threescale-seed-v"${VERSION}"-linux-amd64.tar.gz.sha256 )
-          ( cd dist && sha256sum threescale-visualize-v"${VERSION}"-linux-amd64.tar.gz > threescale-visualize-v"${VERSION}"-linux-amd64.tar.gz.sha256 )
 
           ./scripts/pack-export-minimal.sh
           cp testdata/export-minimal-1.0.tar.gz dist/
@@ -62,6 +61,12 @@ jobs:
             dist/threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
             dist/threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
             dist/threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
+            dist/threescale-export-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz
+            dist/threescale-export-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz.sha256
+            dist/threescale-seed-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz
+            dist/threescale-seed-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz.sha256
+            dist/threescale-visualize-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz
+            dist/threescale-visualize-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz.sha256
             dist/export-minimal-1.0.tar.gz
             dist/export-minimal-1.0.tar.gz.sha256
           body: |
@@ -87,7 +92,18 @@ jobs:
 
             ## Download
 
+            Assets are labeled by OS and architecture:
+
+            | Platform | Archive suffix |
+            |----------|----------------|
+            | Linux amd64 | `*-linux-amd64.tar.gz` |
+            | macOS Apple Silicon (darwin/arm64) | `*-darwin-arm64.tar.gz` |
+
+            A native macOS CLI binary does **not** remove the need for a `linux/amd64` Red Hat toolbox image under qemu/binfmt (Docker Desktop or Podman machine) when using the containerized toolbox path.
+
             ### 1. Export a tenant (with metrics)
+
+            **Linux amd64** (primary):
 
             ```bash
             tar xzf threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz
@@ -104,6 +120,15 @@ jobs:
               --metrics-until 2026-01-31 \
               --redact-secrets \
               --insecure
+            ```
+
+            **macOS Apple Silicon** (`darwin-arm64`):
+
+            ```bash
+            tar xzf threescale-export-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz
+            chmod +x threescale-export
+            # Same export flags as above. Toolbox still needs AMD64 emulation
+            # (Docker Desktop / Podman machine qemu/binfmt) for the Red Hat image.
             ```
 
             Metrics only:
@@ -125,17 +150,23 @@ jobs:
             ./threescale-visualize ./export -o ./report --html
             ```
 
+            On Apple Silicon, use `threescale-visualize-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz` instead.
+
             Full guide: [docs/VISUALIZE.md](https://github.com/${{ github.repository }}/blob/main/docs/VISUALIZE.md).
 
             ## Lab / demo (optional)
 
-            - `threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — [docs/SEED.md](https://github.com/${{ github.repository }}/blob/main/docs/SEED.md)
+            - `threescale-seed-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz` — [docs/SEED.md](https://github.com/${{ github.repository }}/blob/main/docs/SEED.md) (also `*-darwin-arm64.tar.gz` on Apple Silicon)
             - `export-minimal-1.0.tar.gz` — offline fixture
             - Demo HTML: [docs/examples/topology-demo.html](https://github.com/${{ github.repository }}/blob/main/docs/examples/topology-demo.html)
 
             ## Verification
 
             ```bash
+            # After downloading the archive(s) for your platform:
             sha256sum -c threescale-export-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
             sha256sum -c threescale-visualize-v${{ steps.version.outputs.tag }}-linux-amd64.tar.gz.sha256
+            # Apple Silicon:
+            # sha256sum -c threescale-export-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz.sha256
+            # sha256sum -c threescale-visualize-v${{ steps.version.outputs.tag }}-darwin-arm64.tar.gz.sha256
             ```
