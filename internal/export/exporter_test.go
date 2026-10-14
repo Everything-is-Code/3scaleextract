@@ -370,11 +370,12 @@ func TestExportRedactSecrets(t *testing.T) {
 		t.Fatal(err)
 	}
 	oidcStr := string(oidcData)
-	if strings.Contains(oidcStr, "zync-user") || strings.Contains(oidcStr, "zync-pass") {
-		t.Fatalf("issuer userinfo still present: %s", oidcData)
+	if strings.Contains(oidcStr, "zync-user") || strings.Contains(oidcStr, "zync-pass") ||
+		strings.Contains(oidcStr, "idp.example.com") {
+		t.Fatalf("issuer endpoint should be fully redacted: %s", oidcData)
 	}
-	if !strings.Contains(oidcStr, "https://idp.example.com/realms/demo") {
-		t.Fatalf("expected stripped issuer host in %s", oidcData)
+	if !strings.Contains(oidcStr, "***REDACTED***") {
+		t.Fatalf("expected redaction marker in oidc config: %s", oidcData)
 	}
 	if strings.Contains(oidcStr, "oidc-client-id") {
 		t.Fatalf("client_id not redacted: %s", oidcData)

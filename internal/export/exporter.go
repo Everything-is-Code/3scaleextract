@@ -163,8 +163,14 @@ func (s *Service) Export(ctx context.Context, opts Options) (*output.Manifest, e
 		applyMetricsManifest(manifest, since, until, granularity, metricName)
 	}
 
+	if err := writer.WriteManifest(manifest); err != nil {
+		return manifest, err
+	}
+
 	if opts.RedactSecrets {
 		rep.Phase("Redacting secrets")
+		// Run after WriteManifest so admin_url and other sanitize keys in
+		// manifest.json are redacted with the rest of the export tree.
 		if err := RedactDirectory(writer.Root()); err != nil {
 			return manifest, err
 		}
@@ -173,9 +179,6 @@ func (s *Service) Export(ctx context.Context, opts Options) (*output.Manifest, e
 		}
 	}
 
-	if err := writer.WriteManifest(manifest); err != nil {
-		return manifest, err
-	}
 	return manifest, nil
 }
 

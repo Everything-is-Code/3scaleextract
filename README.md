@@ -283,15 +283,21 @@ Self-signed TLS (Admin Portal or toolbox):
 
 `--redact-secrets` is **opt-in** (default off). When set, every `.json`, `.yaml`, and `.yml` file under the export root is processed before `manifest.json` is written.
 
+Matching is case-insensitive and underscore-insensitive (`api_key` / `apikey`, `issuerEndpoint` / `issuer_endpoint`).
+
 **Fully redacted keys** (value becomes `***REDACTED***`):
 
-`access_token`, `api_key`, `app_id`, `app_key`, `client_id`, `client_secret`, `provider_key`, `provider_verification_key`, `secret`, `user_key`
+Secrets / credentials: `access_token`, `api_key` / `apikey`, `app_id`, `app_key`, `ca_certificates`, `certificate`, `certificate_key`, `client_id`, `client_secret`, `password`, `provider_key`, `provider_verification_key`, `secret`, `secret_token`, `user_key`, `username`
 
-**Issuer URL stripping** (`issuer_endpoint`, `oidc_issuer_endpoint`): embedded credentials are removed (`https://user:pass@host/path` → `https://host/path`); host, path, and query stay visible.
+Infra / URL fields: `admin_url`, `api_backend`, `endpoint`, `href`, `issuer_endpoint` / `issuerEndpoint`, `oidc_issuer_endpoint`, `private_endpoint`, `privateBaseURL`, `productionPublicBaseURL`, `sandbox_endpoint`, `staging_endpoint`, `stagingPublicBaseURL`, `token_url`
+
+YAML literal/folded blocks under those keys (e.g. PEM `certificate` / `certificate_key`) are removed entirely so multi-line key material does not remain in the file.
 
 **Preserved auth-mode flags** (not secrets): `auth_user_key`, `auth_app_id`, `auth_app_key`
 
-After redaction, a cleartext scan runs over the same artifacts. If any sensitive value or issuer userinfo remains, **export fails** with a path-qualified error.
+After redaction, a cleartext scan runs over the same artifacts (including residual PEM markers). If any sensitive value remains, **export fails** with a path-qualified error.
+
+**Impact:** topology reports lose concrete URLs/issuers when redaction is on; product/backend counts, auth modes, and policy **names** remain usable for sizing.
 
 ### Hit metrics (Analytics API)
 

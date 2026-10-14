@@ -3,36 +3,83 @@ package export
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
-var sensitiveJSONKeys = map[string]struct{}{
-	"access_token":              {},
-	"client_secret":               {},
-	"secret":                      {},
-	"api_key":                     {},
-	"user_key":                    {},
-	"app_key":                     {},
-	"provider_key":                {},
-	"provider_verification_key":   {},
-	"client_id":                   {},
-	"app_id":                      {},
+// sensitiveRedactKeys lists field names that become ***REDACTED*** under --redact-secrets.
+// Matching uses normalizeRedactKey (lower-case, underscores removed) so api_key and apikey,
+// issuerEndpoint and issuer_endpoint, stagingPublicBaseURL and staging_public_base_url align.
+//
+// Covers the consulting sanitize contract (secrets + infra URLs) including the BPBA key list.
+var sensitiveRedactKeys = map[string]struct{}{
+	// Original secret keys
+	"accesstoken":             {},
+	"clientsecret":            {},
+	"secret":                  {},
+	"apikey":                  {},
+	"userkey":                 {},
+	"appkey":                  {},
+	"providerkey":             {},
+	"providerverificationkey": {},
+	"clientid":                {},
+	"appid":                   {},
+	// Expanded secrets (client findings)
+	"password":        {},
+	"secrettoken":     {},
+	"certificate":     {},
+	"certificatekey":  {},
+	"cacertificates":  {},
+	"username":        {},
+	// Infra / URL fields (client findings) — fully redacted for sanitize delivery
+	"href":                    {},
+	"privateendpoint":         {},
+	"tokenurl":                {},
+	"apibackend":              {},
+	"endpoint":                {},
+	"oidcissuerendpoint":      {},
+	"issuerendpoint":          {},
+	"sandboxendpoint":         {},
+	"stagingendpoint":         {},
+	"stagingpublicbaseurl":    {},
+	"productionpublicbaseurl": {},
+	"privatebaseurl":          {},
+	"adminurl":                {},
 }
 
-var issuerJSONKeys = map[string]struct{}{
-	"issuer_endpoint":      {},
-	"oidc_issuer_endpoint": {},
+// yamlSensitiveKeyPattern matches a YAML mapping key that should be fully redacted.
+// Captures indent+key+colon so the value (same line and/or indented block) can be replaced.
+var yamlSensitiveKeyPattern = regexp.MustCompile(`(?i)^([ \t]*)(` +
+	`access_token|client_secret|secret_token|secret|api_key|apikey|user_key|app_key|` +
+	`provider_key|provider_verification_key|client_id|app_id|password|username|` +
+	`certificate_key|certificate|ca_certificates|` +
+	`href|private_endpoint|token_url|api_backend|endpoint|` +
+	`oidc_issuer_endpoint|issuer_endpoint|issuerEndpoint|sandbox_endpoint|staging_endpoint|` +
+	`stagingPublicBaseURL|productionPublicBaseURL|privateBaseURL|admin_url` +
+	`)[ \t]*:[ \t]*(.*)$`)
+
+const redactedMarker = "***REDACTED***"
+const redactedValue = `"` + redactedMarker + `"`
+
+func normalizeRedactKey(k string) string {
+	var b strings.Builder
+	b.Grow(len(k))
+	for _, r := range k {
+		if r == '_' || r == '-' {
+			continue
+		}
+		b.WriteRune(unicode.ToLower(r))
+	}
+	return b.String()
 }
 
-var yamlSecretPattern = regexp.MustCompile(`(?m)^(\s*(?:access_token|client_secret|secret|api_key|user_key|app_key|provider_key|provider_verification_key|client_id|app_id)\s*:\s*).+$`)
-
-var yamlIssuerPattern = regexp.MustCompile(`(?m)^(\s*(?:issuer_endpoint|oidc_issuer_endpoint)\s*:\s*)(.+)$`)
-
-const redactedValue = `"***REDACTED***"`
+func isSensitiveRedactKey(k string) bool {
+	_, ok := sensitiveRedactKeys[normalizeRedactKey(k)]
+	return ok
+}
 
 func RedactDirectory(root string) error {
 	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
@@ -81,32 +128,77 @@ func redactYAMLFile(path string) error {
 }
 
 func redactYAMLContent(content string) string {
-	content = yamlSecretPattern.ReplaceAllString(content, `${1}`+redactedValue)
-	return yamlIssuerPattern.ReplaceAllStringFunc(content, func(match string) string {
-		sub := yamlIssuerPattern.FindStringSubmatch(match)
-		if len(sub) < 3 {
-			return match
+	lines := strings.Split(content, "\n")
+	out := make([]string, 0, len(lines))
+	for i := 0; i < len(lines); {
+		line := lines[i]
+		sub := yamlSensitiveKeyPattern.FindStringSubmatch(line)
+		if sub == nil {
+			out = append(out, line)
+			i++
+			continue
 		}
-		return sub[1] + stripURLUserinfo(strings.TrimSpace(sub[2]))
-	})
+		indent, key, rest := sub[1], sub[2], strings.TrimSpace(sub[3])
+		out = append(out, indent+key+": "+redactedValue)
+		i++
+		// Drop folded/literal block body (PEM certificates, multi-line secrets).
+		if rest == "|" || rest == "|-" || rest == "|+" || rest == ">" || rest == ">-" || rest == ">+" || rest == "" {
+			keyIndent := len(indent)
+			for i < len(lines) {
+				next := lines[i]
+				if strings.TrimSpace(next) == "" {
+					// Blank line inside a block: keep skipping while still in block context.
+					if i+1 < len(lines) && leadingWSLen(lines[i+1]) > keyIndent {
+						i++
+						continue
+					}
+					break
+				}
+				if leadingWSLen(next) > keyIndent {
+					i++
+					continue
+				}
+				break
+			}
+		}
+	}
+	return strings.Join(out, "\n")
+}
+
+func leadingWSLen(s string) int {
+	n := 0
+	for _, r := range s {
+		if r == ' ' || r == '\t' {
+			n++
+			continue
+		}
+		break
+	}
+	return n
 }
 
 func redactJSONValue(v any) {
 	switch node := v.(type) {
 	case map[string]any:
 		for k, val := range node {
-			lowerK := strings.ToLower(k)
-			if _, ok := sensitiveJSONKeys[lowerK]; ok {
-				node[k] = "***REDACTED***"
+			if !isSensitiveRedactKey(k) {
+				redactJSONValue(val)
 				continue
 			}
-			if _, ok := issuerJSONKeys[lowerK]; ok {
-				if s, ok := val.(string); ok {
-					node[k] = stripURLUserinfo(s)
+			switch typed := val.(type) {
+			case string:
+				node[k] = redactedMarker
+			case []any:
+				redactSensitiveArray(typed)
+				node[k] = typed
+			case map[string]any:
+				// Schema/object under a sensitive key name (e.g. policy catalog): recurse, do not wipe structure.
+				redactJSONValue(typed)
+			default:
+				if typed != nil {
+					redactJSONValue(typed)
 				}
-				continue
 			}
-			redactJSONValue(val)
 		}
 	case []any:
 		for _, item := range node {
@@ -115,21 +207,15 @@ func redactJSONValue(v any) {
 	}
 }
 
-func stripURLUserinfo(raw string) string {
-	u, err := url.Parse(raw)
-	if err != nil || u.User == nil {
-		return raw
+func redactSensitiveArray(items []any) {
+	for i, item := range items {
+		switch typed := item.(type) {
+		case string:
+			items[i] = redactedMarker
+		default:
+			redactJSONValue(typed)
+		}
 	}
-	u.User = nil
-	return u.String()
-}
-
-func containsIssuerUserinfo(raw string) bool {
-	u, err := url.Parse(raw)
-	if err != nil {
-		return false
-	}
-	return u.User != nil
 }
 
 func ContainsCleartextSecret(data []byte) bool {
@@ -142,45 +228,53 @@ func ContainsCleartextSecret(data []byte) bool {
 
 func yamlHasCleartextSecret(data []byte) bool {
 	for _, line := range strings.Split(string(data), "\n") {
-		if sub := yamlSecretPattern.FindStringSubmatch(line); len(sub) == 2 {
-			val := yamlValueFromLine(sub[0])
-			if val != "" && val != "***REDACTED***" {
-				return true
-			}
+		sub := yamlSensitiveKeyPattern.FindStringSubmatch(line)
+		if sub == nil {
+			continue
 		}
-		if sub := yamlIssuerPattern.FindStringSubmatch(line); len(sub) == 3 {
-			val := strings.TrimSpace(sub[2])
-			val = strings.Trim(val, `"'`)
-			if containsIssuerUserinfo(val) {
-				return true
-			}
+		rest := strings.TrimSpace(sub[3])
+		rest = strings.Trim(rest, `"'`)
+		if rest == "" || rest == "|" || rest == "|-" || rest == "|+" || rest == ">" || rest == ">-" || rest == ">+" {
+			// Block scalar or empty value: residual PEM lines are detected below.
+			continue
 		}
+		if rest != redactedMarker {
+			return true
+		}
+	}
+	// Residual PEM / private-key material left after incomplete redaction.
+	lower := strings.ToLower(string(data))
+	if strings.Contains(lower, "-----begin ") && (strings.Contains(lower, " private key-----") || strings.Contains(lower, " certificate-----")) {
+		return true
 	}
 	return false
-}
-
-func yamlValueFromLine(line string) string {
-	parts := strings.SplitN(line, ":", 2)
-	if len(parts) < 2 {
-		return ""
-	}
-	return strings.Trim(strings.TrimSpace(parts[1]), `"'`)
 }
 
 func jsonHasCleartextSecret(v any) bool {
 	switch node := v.(type) {
 	case map[string]any:
 		for k, val := range node {
-			lowerK := strings.ToLower(k)
-			if _, ok := sensitiveJSONKeys[lowerK]; ok {
-				if s, ok := val.(string); ok && s != "" && s != "***REDACTED***" {
-					return true
+			if isSensitiveRedactKey(k) {
+				switch typed := val.(type) {
+				case string:
+					if typed != "" && typed != redactedMarker {
+						return true
+					}
+				case []any:
+					for _, item := range typed {
+						if s, ok := item.(string); ok && s != "" && s != redactedMarker {
+							return true
+						}
+						if jsonHasCleartextSecret(item) {
+							return true
+						}
+					}
+				default:
+					if jsonHasCleartextSecret(val) {
+						return true
+					}
 				}
-			}
-			if _, ok := issuerJSONKeys[lowerK]; ok {
-				if s, ok := val.(string); ok && containsIssuerUserinfo(s) {
-					return true
-				}
+				continue
 			}
 			if jsonHasCleartextSecret(val) {
 				return true
