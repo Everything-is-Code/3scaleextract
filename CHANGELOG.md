@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-10-14
+
 ### Changed
 
 - **threescale-export** — `--redact-secrets` now fully redacts the consulting sanitize key set (certificates/PEM blocks, `password`, `apikey`, `secret_token`, `username`, and infra URLs such as `private_endpoint`, `admin_url`, `*BaseURL`, issuer endpoints). Issuer URLs are no longer host-preserved (credentials+host become `***REDACTED***`). Multi-line YAML PEM bodies are stripped.
