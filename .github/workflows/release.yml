@@ -73,12 +73,9 @@ jobs:
             ## What's new in v${{ steps.version.outputs.tag }}
 
             ### threescale-export
-            - **`--toolbox-platform`** / `THREESCALE_TOOLBOX_PLATFORM` — opt-in `--platform` on toolbox `podman|docker run` (e.g. `linux/amd64` on Apple Silicon). Empty omits the flag (no auto-default). Ignored with `--toolbox-binary`.
+            - **`--redact-secrets` (expanded)** — consulting sanitize key set: certificates/PEM blocks, `password`, `apikey`, `secret_token`, `username`, infra URLs (`private_endpoint`, `admin_url`, `*BaseURL`, issuer endpoints, etc.). Issuer URLs fully redacted (not host-preserved). Multi-line YAML PEM bodies stripped. Still **opt-in**.
 
-            ### Release packaging
-            - **macOS Apple Silicon** — `*-darwin-arm64.tar.gz` (+ `.sha256`) alongside `*-linux-amd64.tar.gz` (since v0.4.5)
-
-            See [README](https://github.com/${{ github.repository }}/blob/main/README.md) and [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for flags and full release history.
+            See [README](https://github.com/${{ github.repository }}/blob/main/README.md#redaction) and [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for the full key list and history.
 
             ---
 
